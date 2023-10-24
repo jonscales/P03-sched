@@ -1,5 +1,6 @@
 timeSlice = 10
 from rich import print
+from rich.text import Text
 
 class Queue:
     def __init__(self):
@@ -88,7 +89,24 @@ class PCB:
     
     def __str__(self):
         # f'AT: {self.arrivalTime}, PID: {self.pid}, Priority: {self.priority}, CPU: {self.cpubursts}, IO: {self.iobursts}'
-        return f"[red]Arrival Time:[/red] {self.arrivalTime},[blue]PID:[/blue] {self.pid}, [green]Priority:[/green] {self.priority}, [yellow]CPU:[/yellow] {self.cpubursts}, [magenta]IO:[/magenta] {self.iobursts}"
+        return f"[red]AT:[/red] {self.arrivalTime:2}, [blue]PID:[/blue] {self.pid:2}, [green]Priority:[/green] {self.priority:2}, [yellow]CPU:[/yellow] {self.cpubursts}, [magenta]IO:[/magenta] {self.iobursts}"
+    #    return (
+    #         f"[red]AT:[/red] {self.arrivalTime:<10}"
+    #         f"[blue]PID:[/blue] {self.pid:<10}"
+    #         f"[green]Priority:[/green] {self.priority:<10}"
+    #         f"[yellow]CPU:[/yellow] {self.cpubursts:<100}"
+    #         f"[magenta]IO:[/magenta] {self.iobursts:<100}"
+    #     )
+
+        # at_str = f"[red]AT:[/red] {self.arrivalTime:2}"
+        # pid_str = f"[blue]PID:[/blue] {self.pid:2}"
+        # priority_str = f"[green]Priority:[/green] {self.priority:2}"
+        # cpubursts_str = f"[yellow]CPU:[/yellow] {self.cpubursts}"
+        # iobursts_str = f"[magenta]IO:[/magenta] {self.iobursts}"
+
+        # return at_str + pid_str + priority_str + cpubursts_str + " " +iobursts_str
+    
+
 class Simulator:
     def __init__(self,datfile):
         self.datfile = datfile
@@ -135,7 +153,8 @@ class Simulator:
                 
         for pcb_key, pcb_instances in processes.items():
             for pcb_instance in pcb_instances:
-                print(f"{pcb_key}: {pcb_instance}")
+                print(f"[bold]{pcb_key}:[/bold] {pcb_instance}")
+                #print(pcb_instance.to_str())
 
                 #print(f"{arrival}, {pid}, {priority} {len(bursts)}{cpubursts}{iobursts}")
 
