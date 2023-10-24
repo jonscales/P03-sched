@@ -1,4 +1,5 @@
-timeSlice = 2
+timeSlice = 10
+from rich import print
 
 class Queue:
     def __init__(self):
@@ -59,15 +60,13 @@ class CPU:
             pass
             # kick it off the cpu
 
-
-
-
 class PCB:
-    def __init__(self,pid,bursts,at,priority):
+    def __init__(self,at,pid,priority,cpubursts,iobursts):
         self.pid = pid     
         self.priority = priority     # 0
         self.arrivalTime = at
-        self.bursts = bursts    # 5 3  2 2  2 3  3 3 3 2 3 3 4 2 5 2 5 3 3 3 4
+        self.cpubursts = cpubursts    # 5 3  2 2  2 3  3 3 3 2 3 3 4 2 5 2 5 3 3 3 4
+        self.iobursts=iobursts
         self.currBurst = 'IO'
         self.currBurstIndex = 1
         self.cpuBurst = 5
@@ -86,6 +85,9 @@ class PCB:
     
     def getCurrentBurstTime(self):
         return self.bursts[self.currBurstIndex]
+    
+    def __str__(self):
+        return f'AT: {self.arrivalTime}, PID: {self.pid}, Priority: {self.priority}, CPU: {self.cpubursts}, IO: {self.iobursts}'
     
 class Simulator:
     def __init__(self,datfile):
@@ -108,18 +110,36 @@ class Simulator:
     def readData(self):
         with open(self.datfile) as f:
             self.data = f.read().split("\n")
-
+        processes = {}
+        pn=0
         for process in self.data:
+            pn+=1
             if len(process) > 0:
+               
                 parts = process.split(' ')
                 arrival = parts[0]
                 pid = parts[1]
                 priority = parts[2]
-                bursts = parts[3:]
+                bursts = parts[3:]  # gets everything else in the process list
+                # parse bursts into CPU & IO
+                cpubursts=[]
+                iobursts=[]
+                
+                for i in range(len(bursts)):
+                    if i%2==0:
+                        cpubursts.append(bursts[i])
+                    else:
+                        iobursts.append(bursts[i])
+                pcb_key=f'pcb-{pn}'
+                processes[pcb_key]=[PCB(arrival,pid,priority,cpubursts,iobursts)]
+                
+        for pcb_key, pcb_instances in processes.items():
+            for pcb_instance in pcb_instances:
+                print(f"{pcb_key}: {pcb_instance}")
 
-                print(f"{arrival}, {pid}, {priority} {len(bursts)}{bursts}")
+                #print(f"{arrival}, {pid}, {priority} {len(bursts)}{cpubursts}{iobursts}")
 
 
 if __name__=='__main__':
     sim = Simulator("datafile.dat")
-    print(sim)
+   # print(sim)

@@ -22,7 +22,7 @@ class Queue:
         queue =[]
     
     def addPCB(self,pcb):
-        queue.append(pcb)
+        self.append(pcb)
 
     def removePCB(self):
         item = queue[0]
