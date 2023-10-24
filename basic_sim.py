@@ -87,8 +87,8 @@ class PCB:
         return self.bursts[self.currBurstIndex]
     
     def __str__(self):
-        return f'AT: {self.arrivalTime}, PID: {self.pid}, Priority: {self.priority}, CPU: {self.cpubursts}, IO: {self.iobursts}'
-    
+        # f'AT: {self.arrivalTime}, PID: {self.pid}, Priority: {self.priority}, CPU: {self.cpubursts}, IO: {self.iobursts}'
+        return f"[red]Arrival Time:[/red] {self.arrivalTime},[blue]PID:[/blue] {self.pid}, [green]Priority:[/green] {self.priority}, [yellow]CPU:[/yellow] {self.cpubursts}, [magenta]IO:[/magenta] {self.iobursts}"
 class Simulator:
     def __init__(self,datfile):
         self.datfile = datfile
