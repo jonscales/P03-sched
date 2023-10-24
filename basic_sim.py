@@ -64,16 +64,20 @@ class CPU:
 class PCB:
     def __init__(self,at,pid,priority,cpubursts,iobursts):
         self.pid = pid     
-        self.priority = priority     # 0
+        self.priority = priority     
         self.arrivalTime = at
-        self.cpubursts = cpubursts    # 5 3  2 2  2 3  3 3 3 2 3 3 4 2 5 2 5 3 3 3 4
+        self.cpubursts = cpubursts    
         self.iobursts=iobursts
         self.currBurst = 'IO'
-        self.currBurstIndex = 1
-        self.cpuBurst = 5
+        self.currBurstIndex = 0
+        self.currCpuBurst = cpubursts[0]
+        self.currIoBurst =iobursts[0]
         self.readyQueueTime = 0
         self.waitQueueTime = 0
         self.cpuTime = 0
+        self.ioTime =0
+        self.noCpuBursts =len(cpubursts)
+        self.noIoBursts =len(iobursts)
 
     def decrementCpuBurst(self):
         self.bursts[self.currBurstIndex] -= 1
@@ -87,25 +91,22 @@ class PCB:
     def getCurrentBurstTime(self):
         return self.bursts[self.currBurstIndex]
     
-    def __str__(self):
-        # f'AT: {self.arrivalTime}, PID: {self.pid}, Priority: {self.priority}, CPU: {self.cpubursts}, IO: {self.iobursts}'
-        return f"[red]AT:[/red] {self.arrivalTime:2}, [blue]PID:[/blue] {self.pid:2}, [green]Priority:[/green] {self.priority:2}, [yellow]CPU:[/yellow] {self.cpubursts}, [magenta]IO:[/magenta] {self.iobursts}"
-    #    return (
-    #         f"[red]AT:[/red] {self.arrivalTime:<10}"
-    #         f"[blue]PID:[/blue] {self.pid:<10}"
-    #         f"[green]Priority:[/green] {self.priority:<10}"
-    #         f"[yellow]CPU:[/yellow] {self.cpubursts:<100}"
-    #         f"[magenta]IO:[/magenta] {self.iobursts:<100}"
-    #     )
-
-        # at_str = f"[red]AT:[/red] {self.arrivalTime:2}"
-        # pid_str = f"[blue]PID:[/blue] {self.pid:2}"
-        # priority_str = f"[green]Priority:[/green] {self.priority:2}"
-        # cpubursts_str = f"[yellow]CPU:[/yellow] {self.cpubursts}"
-        # iobursts_str = f"[magenta]IO:[/magenta] {self.iobursts}"
-
-        # return at_str + pid_str + priority_str + cpubursts_str + " " +iobursts_str
+    def getTotCpuTime(self):
+        for i in range(len(self.cpubursts)):
+            self.cpuTime+=int(self.cpubursts[i])
+            return self.cpuTime
+    def getTotIoTime(self):
+        for i in range(len(self.iobursts)):
+            self.ioTime=+int(self.iobursts[i])
+            return self.ioTime    
     
+    def __str__(self):
+       
+        # simple return list
+        return f"[red]AT:[/red] {self.arrivalTime}, [blue]PID:[/blue] {self.pid}, [green]Priority:[/green] {self.priority:2}, [yellow]# CPU bursts:[/yellow] {self.noCpuBursts}, [yellow]CPU Time =[/yellow] {self.getTotCpuTime()} [magenta]# IO Bursts:[/magenta] {self.noIoBursts} [magenta]IO Time=[/magenta] {self.getTotIoTime()}"
+        #burst itemized list
+        #return f"[red]AT:[/red] {self.arrivalTime}, [blue]PID:[/blue] {self.pid}, [green]Priority:[/green] {self.priority:2}, [yellow]CPU:[/yellow] {self.cpubursts}, [magenta]IO:[/magenta] {self.iobursts}"
+        
 
 class Simulator:
     def __init__(self,datfile):
