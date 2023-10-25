@@ -94,18 +94,18 @@ class PCB:
     def getTotCpuTime(self):
         for i in range(len(self.cpubursts)):
             self.cpuTime+=int(self.cpubursts[i])
-            return self.cpuTime
+        return self.cpuTime
     def getTotIoTime(self):
         for i in range(len(self.iobursts)):
-            self.ioTime=+int(self.iobursts[i])
-            return self.ioTime    
+            self.ioTime+=int(self.iobursts[i])
+        return self.ioTime    
     
     def __str__(self):
        
         # simple return list
-        return f"[red]AT:[/red] {self.arrivalTime}, [blue]PID:[/blue] {self.pid}, [green]Priority:[/green] {self.priority:2}, [yellow]# CPU bursts:[/yellow] {self.noCpuBursts}, [yellow]CPU Time =[/yellow] {self.getTotCpuTime()} [magenta]# IO Bursts:[/magenta] {self.noIoBursts} [magenta]IO Time=[/magenta] {self.getTotIoTime()}"
+        #return f"[red]AT:[/red] {self.arrivalTime}, [blue]PID:[/blue] {self.pid}, [green]Priority:[/green] {self.priority:2}, [yellow]# CPU bursts:[/yellow] {self.noCpuBursts}, [yellow]CPU Time =[/yellow] {self.getTotCpuTime()} [magenta]# IO Bursts:[/magenta] {self.noIoBursts} [magenta]IO Time=[/magenta] {self.getTotIoTime()}"
         #burst itemized list
-        #return f"[red]AT:[/red] {self.arrivalTime}, [blue]PID:[/blue] {self.pid}, [green]Priority:[/green] {self.priority:2}, [yellow]CPU:[/yellow] {self.cpubursts}, [magenta]IO:[/magenta] {self.iobursts}"
+        return f"[red]AT:[/red] {self.arrivalTime}, [blue]PID:[/blue] {self.pid}, [green]Priority:[/green] {self.priority:2}, [yellow]CPU:[/yellow] {self.cpubursts}, [magenta]IO:[/magenta] {self.iobursts}"
         
 
 class Simulator:
@@ -116,6 +116,7 @@ class Simulator:
         self.running = CPU()
         self.ready = Queue()
         self.terminated = Queue()
+        self.processes = {}
         self.readData()
 
     def __str__(self):
@@ -129,7 +130,7 @@ class Simulator:
     def readData(self):
         with open(self.datfile) as f:
             self.data = f.read().split("\n")
-        processes = {}
+        
         pn=0
         for process in self.data:
             pn+=1
@@ -150,16 +151,22 @@ class Simulator:
                     else:
                         iobursts.append(bursts[i])
                 pcb_key=f'pcb-{pn}'
-                processes[pcb_key]=[PCB(arrival,pid,priority,cpubursts,iobursts)]
+                self.processes[pcb_key]=[PCB(arrival,pid,priority,cpubursts,iobursts)]
                 
-        for pcb_key, pcb_instances in processes.items():
+        for pcb_key, pcb_instances in self.processes.items():
             for pcb_instance in pcb_instances:
                 print(f"[bold]{pcb_key}:[/bold] {pcb_instance}")
                 #print(pcb_instance.to_str())
 
                 #print(f"{arrival}, {pid}, {priority} {len(bursts)}{cpubursts}{iobursts}")
-
+        return self.processes
 
 if __name__=='__main__':
     sim = Simulator("datafile.dat")
    # print(sim)
+    key = 'pcb-2'
+    item=sim.processes['pcb-2']
+    if item:
+        for attribute in ['arrivalTime', 'pid', 'priority','cpubursts','iobursts']:
+            print(f'{attribute.capitalize()}:  {getattr(item[0], attribute)}')
+    #print(f'{item}')
