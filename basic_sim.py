@@ -165,8 +165,25 @@ if __name__=='__main__':
     sim = Simulator("datafile.dat")
    # print(sim)
     key = 'pcb-2'
-    item=sim.processes['pcb-2']
-    if item:
-        for attribute in ['arrivalTime', 'pid', 'priority','cpubursts','iobursts']:
-            print(f'{attribute.capitalize()}:  {getattr(item[0], attribute)}')
+    # set & print a single pcb from the processes dict
+    item=sim.processes['pcb-1'][0]
+    print(f'{item}')
+    # for a given current burst index value
+    #print the given burst value at an index position within the burst list of the pcb dict item. 
+    
+    #pcb_instance = sim.processes['pcb-1'][0]
+    #check len of cpuburst list - list will eventually go to 0 currBurstIndex will always be 0 index
+    if 0<=sim.processes['pcb-1'][0].currBurstIndex < len(sim.processes['pcb-1'][0].cpubursts): 
+        currCpuBurst=sim.processes['pcb-1'][0].cpubursts[sim.processes['pcb-1'][0].currBurstIndex]
+        if currCpuBurst ==0:
+            sim.processes['pcb-1'][0].currBurstIndex.pop(0)
+            
+        print(f"CPU Burst at index {sim.processes['pcb-1'][0].currBurstIndex}: {currCpuBurst}")
+    elif 0<=sim.processes['pcb-1'][0].currBurstIndex < len(sim.processes['pcb-1'][0].cpubursts):
+        
+    # if item:
+    #     for attribute in ['arrivalTime', 'pid', 'priority','cpubursts','iobursts']:
+    #         print(f'{attribute.capitalize()}:  {getattr(item[0], attribute)}')
+    #     for attribute in ['cpubursts']:   
+    #         print(f'{attribute.capitalize()}:  {getattr(item[0], attribute)}')
     #print(f'{item}')
