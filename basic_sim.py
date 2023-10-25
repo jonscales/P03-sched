@@ -169,8 +169,9 @@ if __name__=='__main__':
     item=sim.processes['pcb-1'][0]
     print(f'{item}')
     
-    
-    # for a given current burst index value
+    #########################################
+    # for a given current burst index value #
+    #########################################
     #print the given burst value at an index position within the burst list of the pcb dict item. 
         
     #This all probably should be a function in the queue class(es)
@@ -178,6 +179,9 @@ if __name__=='__main__':
     # pass them to correct queue based on bool flags like CPU=T/F or IO=T/F
     pcb_instance = sim.processes['pcb-1'][0]  # create a convient variable to refer to each instance of the PCB class
 
+    ###########################
+    #current CPU burst  value #
+    ###########################
     #check len of cpuburst list - list will eventually go to length 0,  currBurstIndex will always be [0] index
     if 0<=pcb_instance.currBurstIndex < len(pcb_instance.cpubursts): 
         currCpuBurst=pcb_instance.cpubursts[pcb_instance.currBurstIndex]
@@ -189,7 +193,19 @@ if __name__=='__main__':
         #return currCpuBurst value so it can be operated on by CPU class methods
     elif 0<=sim.processes['pcb-1'][0].currBurstIndex < len(sim.processes['pcb-1'][0].cpubursts):
        pass 
-    
+    ##########################
+    #current IO burst  value #
+    ##########################
+    if 0<=pcb_instance.currBurstIndex < len(pcb_instance.iobursts): 
+        currIoBurst=pcb_instance.iobursts[pcb_instance.currBurstIndex]
+        if currIoBurst == 0:  # is the current index value 0? if so pop it off the list - cpu burst is done
+            pcb_instance.currBurstIndex.pop(0) 
+            IO=True
+
+        print(f"IO Burst at index {pcb_instance.currBurstIndex}: {currIoBurst}")
+        #return currCpuBurst value so it can be operated on by CPU class methods
+    elif 0<=sim.processes['pcb-1'][0].currBurstIndex < len(pcb_instance.iobursts):
+       pass 
     
     # if item:
     #     for attribute in ['arrivalTime', 'pid', 'priority','cpubursts','iobursts']:
