@@ -163,24 +163,34 @@ class Simulator:
 
 if __name__=='__main__':
     sim = Simulator("datafile.dat")
-   # print(sim)
-    key = 'pcb-2'
+   
+   
     # set & print a single pcb from the processes dict
     item=sim.processes['pcb-1'][0]
     print(f'{item}')
+    
+    
     # for a given current burst index value
     #print the given burst value at an index position within the burst list of the pcb dict item. 
-    
-    #pcb_instance = sim.processes['pcb-1'][0]
-    #check len of cpuburst list - list will eventually go to 0 currBurstIndex will always be 0 index
-    if 0<=sim.processes['pcb-1'][0].currBurstIndex < len(sim.processes['pcb-1'][0].cpubursts): 
-        currCpuBurst=sim.processes['pcb-1'][0].cpubursts[sim.processes['pcb-1'][0].currBurstIndex]
-        if currCpuBurst ==0:  # is the current index value 0? if so pop it off the list - cpu burst is done
-            sim.processes['pcb-1'][0].currBurstIndex.pop(0) 
-
-        print(f"CPU Burst at index {sim.processes['pcb-1'][0].currBurstIndex}: {currCpuBurst}")
-    elif 0<=sim.processes['pcb-1'][0].currBurstIndex < len(sim.processes['pcb-1'][0].cpubursts):
         
+    #This all probably should be a function in the queue class(es)
+    # ??loop over processes dict and to all this for each PCB?  
+    # pass them to correct queue based on bool flags like CPU=T/F or IO=T/F
+    pcb_instance = sim.processes['pcb-1'][0]  # create a convient variable to refer to each instance of the PCB class
+
+    #check len of cpuburst list - list will eventually go to length 0,  currBurstIndex will always be [0] index
+    if 0<=pcb_instance.currBurstIndex < len(pcb_instance.cpubursts): 
+        currCpuBurst=pcb_instance.cpubursts[pcb_instance.currBurstIndex]
+        if currCpuBurst ==0:  # is the current index value 0? if so pop it off the list - cpu burst is done
+            pcb_instance.currBurstIndex.pop(0) 
+            IO=True
+
+        print(f"CPU Burst at index {pcb_instance.currBurstIndex}: {currCpuBurst}")
+        #return currCpuBurst value so it can be operated on by CPU class methods
+    elif 0<=sim.processes['pcb-1'][0].currBurstIndex < len(sim.processes['pcb-1'][0].cpubursts):
+       pass 
+    
+    
     # if item:
     #     for attribute in ['arrivalTime', 'pid', 'priority','cpubursts','iobursts']:
     #         print(f'{attribute.capitalize()}:  {getattr(item[0], attribute)}')
