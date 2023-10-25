@@ -5,7 +5,7 @@ from rich.text import Text
 import time
 
 class Queue:
-    def __init__(self,processes):
+    def __init__(self,pcb):
         self.queue = []
 
     def __str__(self):
@@ -50,7 +50,7 @@ class Queue:
     
     
 class New:
-    def __init__(self,processes):
+    def __init__(self,pcb):
         self.new = []
 
     def __str__(self):
@@ -84,7 +84,7 @@ class New:
             pass
         pass
 class Ready:
-    def __init__(self,processes):
+    def __init__(self,pcb):
         self.ready = []
 
     def __str__(self):
@@ -118,7 +118,7 @@ class Ready:
             pass
         pass
 class IO:
-    def __init__(self,processes):
+    def __init__(self,pcb):
         self.io = []
 
     def __str__(self):
@@ -153,7 +153,7 @@ class IO:
         pass
 
 class Finished:
-    def __init__(self,processes):
+    def __init__(self,pcb):
         self.finished = []
 
     def __str__(self):
@@ -187,16 +187,10 @@ class Finished:
             pass
         pass
 
-class SysClock:
-    _shared_state = {}
-    def __init__(self):
-        self.__dict__ = self._shared_state
-        if not 'clock' in self.__dict__: 
-            self.clock = 0
-    
+
 
 class CPU:
-    def __init__(self,processes):
+    def __init__(self,pcb):
         self.busy = False
         self.runningPCB = None
 
@@ -272,7 +266,7 @@ class PCB:
         return f"[red]AT:[/red] {self.arrivalTime}, [green]Priority:[/green] {self.priority:2}, [yellow]CPU:[/yellow] {self.cpubursts}, [magenta]IO:[/magenta] {self.iobursts}"
     
     def processCurrBurst(self):
-        pcb_instance = self.processes['PID-1'][0]  # create a convient variable to refer to each instance of the PCB class
+        pcb = self.processes['PID-1'][0]  # create a convient variable to refer to each instance of the PCB class
         if self.currBurstIs=='CPU':
             self.cpubursts[self.currBurstIndex] -=1
             if self.cpubursts[self.currBurstIndex]==0:
@@ -283,18 +277,26 @@ class PCB:
             if self.iobursts[self.currBurstIndex]==0:
                 self.currBurstsIndex +=1
                 self.currBurstIs = 'CPU'                    
-
+class SysClock:
+    _shared_state = {}
+    def __init__(self):
+        self.__dict__ = self._shared_state
+        if not 'clock' in self.__dict__: 
+            self.clock = 0
+    
 class Simulator:
     def __init__(self,datfile):
         self.datfile = datfile
         self.processes = {}
-        self.new = New(self.processes) # passes the processes dict to all queue classes
-        self.wait = IO(self.processes)
-        self.running = CPU(self.processes)
-        self.ready = Ready(self.processes)
-        self.terminated = Finished(self.processes)
+        
+        self.new = New(self.pcb) # passes the processes dict to all queue classes
+        self.wait = IO(self.pcb)
+        self.running = CPU(self.pcb)
+        self.ready = Ready(self.pcb)
+        self.terminated = Finished(self.pcb)
         self.clock = SysClock()
         self.readData()
+        #self.simLoop(self.processes)
 
     def advanceClock(self, tick=1):
         self.clock.clock += tick
@@ -331,20 +333,36 @@ class Simulator:
                 #create dictionary of all processes with PID as key and values are PCBs        
                 pcb_key=f'PID-{pid}' # use pid to be key for each PCB
                 self.processes[pcb_key]=[PCB(pid,arrival,priority,cpubursts,iobursts)]
-       
-        # for demonstration that PCB have been instantiated - print below       
+        
         for pcb_key, pcb_instances in self.processes.items():
             for pcb_instance in pcb_instances:
                 print(f"[bold][blue]{pcb_key}:[/bold][/blue] {pcb_instance}")
+        return self.processes    
+    
+    def pcb(self, processes):    # for demonstration that PCB have been instantiated - print below       
+        for self.readData.pcb_key, pcb_instances in self.processes.items():
+            for pcb_instance in pcb_instances:
+                print(f"[bold][blue]{pcb_key}:[/bold][/blue] {pcb_instance}")
+                pcb=pcb_instance
+        return pcb
                 #print(pcb_instance.to_str())
                 #print(f"{arrival}, {pid}, {priority} {len(bursts)}{cpubursts}{iobursts}")
-
+        
+      
 
     ###################
     # SIMULATION LOOP #
     ###################  
-        # loop to check each process and match clock time to arrival time. 
+    def simLoop(self, processes): 
+
+      # loop to check each process and match clock time to arrival time. 
+        while len(self.processes)>0: #loop until all processes are in finished[] 
         # 1. if arrival time == clock time, 
+            for pcb_key, pcbs in self.processes.items():
+              for pcb in pcbs:
+                  if self.processes['AT']==time:
+                      self.new.addPCB(pcb)
+        pass              
         #       append PCB to new queue
         # 2. decrement all current CPU and IO processes bursts' values by 1
         # 3. move anything already in new to ready - pop from new and append to ready
