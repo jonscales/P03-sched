@@ -36,6 +36,143 @@ class Queue:
         elif what == 'runtime':
             pass
         pass
+class New:
+    def __init__(self):
+        self.new = []
+
+    def __str__(self):
+        return ",".join(self.new)
+
+    def addPCB(self,pcb):
+        self.new.append(pcb)
+    
+    def removePCB(self):
+        item = self.new[0]
+        del self.new[0]
+        return item
+
+    def decrement(self):
+        """ Iterate over the self.queue and decrement or call whatever
+            method for each of the pcb's in this queue
+        """
+        # for each process in queue
+        #    call decrementIoBurst
+        pass
+    
+    def incrememnt(self,what='waittime'):
+        """ Iterate over the self.queue and decrement or call whatever
+            method for each of the pcb's in this queue
+        """
+        # for each process in queue
+        #    call incrementwaittime
+        if what =='waittime':
+            pass
+        elif what == 'runtime':
+            pass
+        pass
+class Ready:
+    def __init__(self):
+        self.ready = []
+
+    def __str__(self):
+        return ",".join(self.ready)
+
+    def addPCB(self,pcb):
+        self.ready.append(pcb)
+    
+    def removePCB(self):
+        item = self.ready[0]
+        del self.ready[0]
+        return item
+
+    def decrement(self):
+        """ Iterate over the self.queue and decrement or call whatever
+            method for each of the pcb's in this queue
+        """
+        # for each process in queue
+        #    call decrementIoBurst
+        pass
+    
+    def incrememnt(self,what='waittime'):
+        """ Iterate over the self.queue and decrement or call whatever
+            method for each of the pcb's in this queue
+        """
+        # for each process in queue
+        #    call incrementwaittime
+        if what =='waittime':
+            pass
+        elif what == 'runtime':
+            pass
+        pass
+class IO:
+    def __init__(self):
+        self.io = []
+
+    def __str__(self):
+        return ",".join(self.io)
+
+    def addPCB(self,pcb):
+        self.io.append(pcb)
+    
+    def removePCB(self):
+        item = self.io[0]
+        del self.io[0]
+        return item
+
+    def decrement(self):
+        """ Iterate over the self.queue and decrement or call whatever
+            method for each of the pcb's in this queue
+        """
+        # for each process in queue
+        #    call decrementIoBurst
+        pass
+    
+    def incrememnt(self,what='waittime'):
+        """ Iterate over the self.queue and decrement or call whatever
+            method for each of the pcb's in this queue
+        """
+        # for each process in queue
+        #    call incrementwaittime
+        if what =='waittime':
+            pass
+        elif what == 'runtime':
+            pass
+        pass
+
+class Finished:
+    def __init__(self):
+        self.finished = []
+
+    def __str__(self):
+        return ",".join(self.finished)
+
+    def addPCB(self,pcb):
+        self.finished.append(pcb)
+    
+    def removePCB(self):
+        item = self.finished[0]
+        del self.finished[0]
+        return item
+
+    def decrement(self):
+        """ Iterate over the self.queue and decrement or call whatever
+            method for each of the pcb's in this queue
+        """
+        # for each process in queue
+        #    call decrementIoBurst
+        pass
+    
+    def incrememnt(self,what='waittime'):
+        """ Iterate over the self.queue and decrement or call whatever
+            method for each of the pcb's in this queue
+        """
+        # for each process in queue
+        #    call incrementwaittime
+        if what =='waittime':
+            pass
+        elif what == 'runtime':
+            pass
+        pass
 
 class SysClock:
     _shared_state = {}
@@ -111,11 +248,11 @@ class PCB:
 class Simulator:
     def __init__(self,datfile):
         self.datfile = datfile
-        self.new = Queue()
-        self.wait = Queue()
+        self.new = New()
+        self.wait = IO()
         self.running = CPU()
-        self.ready = Queue()
-        self.terminated = Queue()
+        self.ready = Ready()
+        self.terminated = Finished()
         self.processes = {}
         self.readData()
 
@@ -184,7 +321,7 @@ if __name__=='__main__':
         #current CPU burst  value #
         ###########################
         #check len of cpuburst list - list will eventually go to length 0,  currBurstIndex will always be [0] index
-        if 0<=pcb_instance.currBurstIndex < len(pcb_instance.cpubursts): 
+        if 0<=pcb_instance.currBurstIndex < pcb_instance.noCpuBursts: 
             currCpuBurst=pcb_instance.cpubursts[pcb_instance.currBurstIndex]
             if currCpuBurst ==0:  # is the current index value 0? if so pop it off the list - cpu burst is done
                 pcb_instance.currBurstIndex.pop(0) 
@@ -192,13 +329,13 @@ if __name__=='__main__':
 
             print(f"CPU Burst at index {pcb_instance.currBurstIndex}: {currCpuBurst}")
             #return currCpuBurst value so it can be operated on by CPU class methods
-        elif 0<=pcb_instance.currBurstIndex < len(pcb_instance.cpubursts):
+        elif 0<=pcb_instance.currBurstIndex < pcb_instance.noCpuBursts:
             pass 
     else:
         ##########################
         #current IO burst  value #
         ##########################
-        if 0<=pcb_instance.currBurstIndex < len(pcb_instance.iobursts): 
+        if 0<=pcb_instance.currBurstIndex < pcb_instance.noIoBursts: 
             currIoBurst=pcb_instance.iobursts[pcb_instance.currBurstIndex]
             if currIoBurst == 0:  # is the current index value 0? if so pop it off the list - cpu burst is done
                 pcb_instance.currBurstIndex.pop(0) 
@@ -206,7 +343,7 @@ if __name__=='__main__':
 
             print(f"IO Burst at index {pcb_instance.currBurstIndex}: {currIoBurst}")
             #return currCpuBurst value so it can be operated on by CPU class methods
-        elif 0<=pcb_instance.currBurstIndex < len(pcb_instance.iobursts):
+        elif 0<=pcb_instance.currBurstIndex < pcb_instance.noIoBursts:
             pass 
         
     # if item:
