@@ -349,18 +349,23 @@ class Simulator:
         # 2. decrement all current CPU and IO processes bursts' values by 1
         # 3. move anything already in new to ready - pop from new and append to ready
         # 4. check if CPU busy, 
-        #       if yes,  
-        #           check if PCB's cpu burst is its last CPU burst, 
-        #                  if yes then move to finished
-        #                else if it isn't last, but is == 0 move to IO,  
-        #                else keep in CPU,   
-        # 5. else if CPU not busy, 
-        #       move 1st PCB in ready to CPU -pop from ready and append to CPU
-        # 6. add +1 to time of every PCB remaining in ready
-        # 7. check to see if any PCBs' current IO burst value == 0,  
+        #       if not busy
+        #               move 1st PCB in ready to CPU -pop from ready and append to CPU
+        #       else is busy,  
+        #           check if PCB's current cpu burst is 0
+        #                  if yes 
+        #                       check if it's the last CPU burst, 
+        #                       if yes  move to finished pop from CPU append to finished
+        #                               move 1st PCB in ready to CPU pop(0) ready append CPU
+        #                elseif current burst is not last, but is == 0 
+        #                       move PCB to IO,  pop CPU  append IO
+        #                       move 1st PCB in ready to CPU,  
+        #                else keep PCB in CPU,                 
+        # 5. add +1 to wait time of every PCB remaining in ready
+        # 6. check to see if any PCBs' in IO have current IO burst value == 0,  
         #       if yes move it to end of ready queue  pop from IO and append to ready
-        # 8. pause 2 seconds time.sleep(2)
-        # 9. increment clock + 1 tick
+        # 7. pause 2 seconds time.sleep(2)
+        # 8. increment clock + 1 tick
         # repeat loop
 
 
