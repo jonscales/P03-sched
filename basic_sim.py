@@ -175,9 +175,9 @@ if __name__=='__main__':
     #check len of cpuburst list - list will eventually go to 0 currBurstIndex will always be 0 index
     if 0<=sim.processes['pcb-1'][0].currBurstIndex < len(sim.processes['pcb-1'][0].cpubursts): 
         currCpuBurst=sim.processes['pcb-1'][0].cpubursts[sim.processes['pcb-1'][0].currBurstIndex]
-        if currCpuBurst ==0:
-            sim.processes['pcb-1'][0].currBurstIndex.pop(0)
-            
+        if currCpuBurst ==0:  # is the current index value 0? if so pop it off the list - cpu burst is done
+            sim.processes['pcb-1'][0].currBurstIndex.pop(0) 
+
         print(f"CPU Burst at index {sim.processes['pcb-1'][0].currBurstIndex}: {currCpuBurst}")
     elif 0<=sim.processes['pcb-1'][0].currBurstIndex < len(sim.processes['pcb-1'][0].cpubursts):
         
