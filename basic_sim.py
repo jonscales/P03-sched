@@ -325,8 +325,10 @@ class Simulator:
         self.clock = SysClock()
         self.readData()
 
-    def advanceClock(self, time=1):
-        self.clock.clock+=time
+    def advanceClock(self, tick=1):
+        self.clock.clock += tick
+        time = self.clock.clock
+        return time
 
     def __str__(self):
         s = ""
@@ -379,6 +381,7 @@ class Simulator:
         # 5. else if CPU not busy, move 1st PCB in ready to CPU 
         # 6. add +1 to time of every PCB remaining in ready
         # 7. check to see if any PCBs' current IO burst value == 0,  if yes move it to end of ready queue
+        # 8. pause 2 seconds time.sleep(2)
         # repeat loop
 
 
