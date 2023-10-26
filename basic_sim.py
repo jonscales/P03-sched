@@ -360,6 +360,7 @@ class Simulator:
         # 7. check to see if any PCBs' current IO burst value == 0,  
         #       if yes move it to end of ready queue  pop from IO and append to ready
         # 8. pause 2 seconds time.sleep(2)
+        # 9. increment clock + 1 tick
         # repeat loop
 
 
