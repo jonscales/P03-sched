@@ -282,36 +282,7 @@ class PCB:
             self.iobursts[self.currBurstIndex]+=1
             if self.iobursts[self.currBurstIndex]==0:
                 self.currBurstsIndex +=1
-                self.currBurstIs = 'CPU'       
-
-            
-            
-        #     #check len of cpuburst list - list will eventually go to length 0,  currBurstIndex will always be [0] index
-        #     if 0<=pcb_instance.currBurstIndex < pcb_instance.noCpuBursts: 
-        #         currCpuBurst=pcb_instance.cpubursts[pcb_instance.currBurstIndex]
-        #         if currCpuBurst ==0:  # is the current index value 0? if so pop it off the list - cpu burst is done
-        #             pcb_instance.currBurstIndex.pop(0) 
-        #             IO=True
-
-        #         print(f"CPU Burst at index {pcb_instance.currBurstIndex}: {currCpuBurst}")
-        #         #return currCpuBurst value so it can be operated on by CPU class methods
-        #     elif 0<=pcb_instance.currBurstIndex < pcb_instance.noCpuBursts:
-        #         pass 
-        # else:
-        #     ##########################
-        #     #current IO burst  value #
-        #     ##########################
-        #     if 0<=pcb_instance.currBurstIndex < pcb_instance.noIoBursts: 
-        #         currIoBurst=pcb_instance.iobursts[pcb_instance.currBurstIndex]
-        #         if currIoBurst == 0:  # is the current index value 0? if so pop it off the list - cpu burst is done
-        #             pcb_instance.currBurstIndex.pop(0) 
-        #             IO=False
-
-        #         print(f"IO Burst at index {pcb_instance.currBurstIndex}: {currIoBurst}")
-        #         #return currCpuBurst value so it can be operated on by CPU class methods
-        #     elif 0<=pcb_instance.currBurstIndex < pcb_instance.noIoBursts:
-        #         pass 
-                
+                self.currBurstIs = 'CPU'                    
 
 class Simulator:
     def __init__(self,datfile):
@@ -373,14 +344,21 @@ class Simulator:
     # SIMULATION LOOP #
     ###################  
         # loop to check each process and match clock time to arrival time. 
-        # 1. if arrival time == clock time, append PCB to new queue
+        # 1. if arrival time == clock time, 
+        #       append PCB to new queue
         # 2. decrement all current CPU and IO processes bursts' values by 1
         # 3. move anything already in new to ready - pop from new and append to ready
-        # 4. check if CPU busy, if yes check  if PCB's cpu burst is its last CPU burst, if yes then move to finished
-        #    else if it isn't last, but is == 0 move to IO,  else keep in CPU,   
-        # 5. else if CPU not busy, move 1st PCB in ready to CPU 
+        # 4. check if CPU busy, 
+        #       if yes,  
+        #           check if PCB's cpu burst is its last CPU burst, 
+        #                  if yes then move to finished
+        #                else if it isn't last, but is == 0 move to IO,  
+        #                else keep in CPU,   
+        # 5. else if CPU not busy, 
+        #       move 1st PCB in ready to CPU -pop from ready and append to CPU
         # 6. add +1 to time of every PCB remaining in ready
-        # 7. check to see if any PCBs' current IO burst value == 0,  if yes move it to end of ready queue
+        # 7. check to see if any PCBs' current IO burst value == 0,  
+        #       if yes move it to end of ready queue  pop from IO and append to ready
         # 8. pause 2 seconds time.sleep(2)
         # repeat loop
 
@@ -401,14 +379,14 @@ if __name__=='__main__':
     #########################################
     #print the given burst value at an index position within the burst list of the pcb dict item. 
         
-    #This all probably should be a function in the queue class(es)
+    #This all probably should be a function in a class(es)
     # ??loop over processes dict and to all this for each PCB?  
     # pass them to correct queue based on bool flags like CPU=T/F or IO=T/F
     
     pcb_instance = sim.processes['PID-1'][0]  # create a convient variable to refer to each instance of the PCB class
     if pcb_instance.currBurstIs=='CPU':
         ###########################
-        #current CPU burst  value #
+        # current CPU burst value #
         ###########################
         #check len of cpuburst list - list will eventually go to length 0,  currBurstIndex will always be [0] index
         if 0<=pcb_instance.currBurstIndex < pcb_instance.noCpuBursts: 
@@ -423,7 +401,7 @@ if __name__=='__main__':
             pass 
     else:
         ##########################
-        #current IO burst  value #
+        # current IO burst value #
         ##########################
         if 0<=pcb_instance.currBurstIndex < pcb_instance.noIoBursts: 
             currIoBurst=pcb_instance.iobursts[pcb_instance.currBurstIndex]
