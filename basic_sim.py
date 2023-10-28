@@ -273,34 +273,26 @@ class SysClock:
         self.__dict__ = self._shared_state
         if not 'clock' in self.__dict__: 
             self.clock = 0
+
+    def advanceClock(self, tick=1):
+        self.clock += tick
+        clockTime = self.clock 
+        return clockTime        
     
 class Simulator:
     def __init__(self,datfile):
         self.datfile = datfile
         self.processes = {}
-        self.readData()  
-        self.pcb = self.getPCB(2,self.processes)
-        self.new_pcbs ={}
-        self.new_pcbs ={}
-        self.ready_pcbs ={}
-        self.CPU_pcbs ={}
-        self.IO_pcbs ={}
-        self.finished_pcbs ={}
-        
-        
-        # self.new = Queue(self.pcb) # passes the pcb instance to queue class instance
-        # self.io = Queue(self.pcb)
-        # self.running = CPU(self.pcb)
-        # self.ready = Queue(self.pcb)
-        # self.finished = Queue(self.pcb)
-        self.clock = SysClock()
-        
+        self.readData()
+        self.newQueue =[]
+        self.readyQueue =[]
+        self.CPUQueue =[]
+        self.IOQueue =[]
+        self.finishedQueue =[]
+        self.clock = SysClock()   
         self.simLoop(self.processes)
 
-    def advanceClock(self, tick=1):
-        self.clock.clock += tick
-        clockTime = self.clock.clock
-        return clockTime
+
 
     def __str__(self):
         s = ""
@@ -338,76 +330,74 @@ class Simulator:
                 print(f"[bold][blue]{pcb_key}:[/bold][/blue] {pcb_instance}")
         return self.processes    
     
-    def getPCB(self, pid, processes):    # for demonstration that PCB have been instantiated - print below       
-        pcb_key=f'PID-{pid}'
-        for pcb_key, pcb_instances in self.processes.items():
-            for pcb_instance in pcb_instances:
-                print(f"[bold][blue]{pcb_key}:[/bold][/blue] {pcb_instance}")
-                pcb=pcb_instance
-        return pcb
+    # def getPCB(self, pid, processes):    # for demonstration that PCB have been instantiated - print below       
+    #     pcb_key=f'PID-{pid}'
+    #     for pcb_key, pcb_instances in self.processes.items():
+    #         for pcb_instance in pcb_instances:
+    #             print(f"[bold][blue]{pcb_key}:[/bold][/blue] {pcb_instance}")
+    #             pcb=pcb_instance
+    #     return pcb
                 
-    def moveToNew(self, processes):
-        new_pcbs ={}
-        for pid, pcbs in list(self.processes.items()):
-              new_pcbs[pid] =[]
-              for pcb in pcbs:
-                  if pcb.arrivalTime == time:
-                      new_pcbs[pid].append(pcb)   # append PCB to new queue
-                      pcbs.remove(pcb)
-        return new_pcbs
+    # def moveToNew(self, processes):
+    #     new_pcbs ={}
+    #     for pid, pcbs in list(self.processes.items()):
+    #           new_pcbs[pid] =[]
+    #           for pcb in pcbs:
+    #               if pcb.arrivalTime == time:
+    #                   new_pcbs[pid].append(pcb)   # append PCB to new queue
+    #                   pcbs.remove(pcb)
+    #     return new_pcbs
       
 
     ###################
     # SIMULATION LOOP #
     ###################  
     def simLoop(self, processes): 
-        new_pcbs ={}
-        ready_pcbs ={}
-        CPU_pcbs ={}
-        IO_pcbs ={}
-        finished_pcbs ={}
+        newQueue =[]
+        readyQueue =[]
+        CPUQueue =[]
+        IOQueue =[]
+        finishedQueue =[]
         
         clockTime = SysClock()  #starts the system clock 
       # loop to check each process and match clock time to arrival time. 
-        while len(self.processes)>0 or len(CPU_pcb)>0: #loop until all processes are in finished[] 
-        # 0. move anything in new to ready
-            if not new_pcbs:
-                print(f'new is empty')
+        while len(self.finishedQueue) < len(self.processes): #loop until all processes are in finished[] 
+         # 1. add 1 to wait_time for everything in readyQueue
+            if readyQueue:
+                for process in readyQueue:
+                    process.readyTime += 1 
             else:
-                for pid, pcbs in list(self.new_pcbs.items()):
-                    ready_pcbs[pid] =[]
-                    for pcb in pcbs:
-                        ready_pcbs[pid].append(pcb)
-                        pcbs.remove(pcb)
-
-        # 1. if pcb arrival time == time, add pcb to new
-              
-            for pid, pcbs in list(self.processes.items()):
-              new_pcbs[pid] =[]
-              for pcb in pcbs:
-                  if pcb.arrivalTime == clockTime:
-                      new_pcbs[pid].append(pcb)   # append PCB to new queue
-                      pcbs.remove(pcb) # remove pcb from processes dict
-    
-        # 2. decrement all current CPU and IO processes bursts' values by 1
-            if not CPU_pcbs:
-                print(f'CPU empty')
+                print(f'Ready queue is currently empty')
+            
+        #2. move anything in new to ready
+            if newQueue:
+               self.readyQueue.extend(self.newQueue)
+               self.newQueue.clear()
+       # 3. check for new processes which may need to go to new if pcb arrival time == time, add pcb to new
+               for process in processes.values():
+                    if process.arrivalTime == self.clock.clock:
+                        self.newQueue.append(process)     
+            else:
+                print(f'new queue is currently empty')      
+                
+        # 4. decrement all current CPU and IO processes bursts' values by 1
+            if CPUQueue:
+                for process in CPUQueue:
+                    process.cpuburst[0]-=1
+                    remainingTime =process.cpubursrts[0]
+                    print(f'PCB-{process.pid} now in CPU with {remainingTime} seconds') 
             else:    
-                for pid, pcbs in list(CPU_pcbs.items()):
-                    for pcb in pcbs:
-                        print(f'CPU burst value of pcb {pcb.pid} in CPU = {pcb.cpubursts[0]}')
-                        pcb.cpubursts[0]-=1
-                        print(f'CPU burst value of pcb {pcb.pid} in CPU decremented to : {pcb.cpubursts[0]}')
-            if not IO_pcbs:
-                print(f'IO empty')
-            else:
-                for pid, pcbs in list(IO_pcbs.items()):
-                    for pcb in pcbs:
-                        print(f'IO burst value of pcb {pcb.pid} in IO = {pcb.iobursts[0]}')
-                        pcb.cpubursts[0]-=1
-                        print(f'IO burst value of pcb {pcb.pid} in IO decremented to : {pcb.iobursts[0]}')  
-
-        # 4. check if CPU busy, 
+                print(f'CPU currently empty')
+            
+            if IOQueue:
+                for process in IOQueue:
+                    process.ioburst[0]-=1
+                    remainingTime =process.iobursrts[0]
+                    print(f'PCB-{process.pid} now in IO with {remainingTime} seconds') 
+            else:    
+                print(f'IO currently empty')              
+##################down to here with revisions##############################
+        # 5. check if CPU busy, 
             if not CPU_pcbs and not ready_pcbs:
                print(f'CPU & ready both empty') 
             elif ready_pcbs and not CPU_pcbs:    

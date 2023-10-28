@@ -67,8 +67,9 @@ for process in io_queue:
 
 12.	pause 2 seconds time.sleep(2)
 sleep(2)
-
-13.	repeat loop
+13. advance the clock
+self.clock.advanceClock(1)
+14.	repeat loop
 repeat from step 2
 
 
