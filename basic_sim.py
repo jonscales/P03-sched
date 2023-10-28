@@ -358,10 +358,11 @@ class Simulator:
         CPUQueue =[]
         IOQueue =[]
         finishedQueue =[]
+        complete =False
+        self.clock
         
-        clockTime = SysClock()  #starts the system clock 
       # loop to check each process and match clock time to arrival time. 
-        while len(self.finishedQueue) < len(self.processes): #loop until all processes are in finished[] 
+        while complete==False: #loop until all processes are in finished[] 
          # 1. add 1 to wait_time for everything in readyQueue
             if readyQueue:
                 for process in readyQueue:
@@ -371,12 +372,12 @@ class Simulator:
             
         #2. move anything in new to ready
             if newQueue:
-               self.readyQueue.extend(self.newQueue)
-               self.newQueue.clear()
+               readyQueue.extend(newQueue)
+               newQueue.clear()
        # 3. check for new processes which may need to go to new if pcb arrival time == time, add pcb to new
                for process in processes.values():
-                    if process.arrivalTime == self.clock.clock:
-                        self.newQueue.append(process)     
+                    if process.arrivalTime == self.clock.clockTime:
+                        newQueue.append(process)     
             else:
                 print(f'new queue is currently empty')      
                 
@@ -396,56 +397,56 @@ class Simulator:
                     print(f'PCB-{process.pid} now in IO with {remainingTime} seconds') 
             else:    
                 print(f'IO currently empty')              
-##################down to here with revisions##############################
+
         # 5. check if CPU busy, 
-            if not CPU_pcbs and not ready_pcbs:
-               print(f'CPU & ready both empty') 
-            elif ready_pcbs and not CPU_pcbs:    
-                print(f'CPU empty moving {ready_pcbs[pid][0]} to CPU')
-                CPU_pcbs.append(ready_pcbs[pid][0].pop(0)) #move 1st PCB in ready to CPU -pop from ready and append to CPU
-            else:    #       else is busy,  
-                if CPU_pcbs[pid]['cpubursts'[0]==0]:  #           check if PCB's current cpu burst is 0
-                    if len(CPU_pcbs[pid]['cpubursts']) ==1:   #   if yes check if it's the last CPU burst, 
-                        print(f'{CPU_pcbs[pid]} has completed')
-                        finished_pcbs[pid].append(CPU_pcbs[pid]) #if yes, move to finished pop from CPU append to finished
-                        CPU_pcbs.remove(CPU_pcbs[pid])
-                        print(f'moving {ready_pcbs[pid][0]} to CPU')
-                        CPU_pcbs.append(ready_pcbs.pop(0)) # move 1st PCB in ready to CPU pop(0) ready append CPU
-                    else: # else current burst is not last, but is == 0 
-                        print(f'{CPU_pcbs[pid]} CPU burst has completed, moving to IO')
-                        IO_pcbs.append(CPU_pcbs.pop) #  move PCB to IO,  pop CPU  append IO
-                        CPU_pcbs.append(ready_pcbs.pop(0)) #move 1st PCB in ready to CPU,
-                # else keep PCB in CPU,
-      # 5. add +1 to wait time of every PCB remaining in ready      
-            if not ready_pcbs:
-                print(f'ready is empty')     
-            else:
-                for pid, pcbs in list(ready_pcbs.items()):
-                    for pcb in pcbs:
-                        pcb.readyTime +=1
-
-        # 6. check to see if any PCBs' in IO have current IO burst value == 0,  
-            if not IO_pcbs:
-                print(f'IO is empty')
-            else:
-                for pid, pcbs in list(IO_pcbs.items()):
-                    for pcb in pcbs:
-                        if IO_pcbs[pid]['iobursts'[0]==0]:  # check if PCB's current IO burst is 0
-                            print(f'{IO_pcbs[pid]} has completed current IO returning to ready')
-                            ready_pcbs[pid].append(IO_pcbs[pid]) #if yes, move to finished pop from IO append to ready
-                            IO_pcbs.remove(IO_pcbs[pid])
+            if CPUQueue: #is process in the CPU
+                process=CPUQueue[0]
+                if process.cpubursts[0] == 0: #is the process in CPU finished?
+                    if len(process.cpubursts) == 1:  # was this the last CPU bursts of running process?
+                        process.cpubursts.pop(0) # remove the finished burst from the cpue bursts list
+                        finishedQueue.append(process)  # move the finished process to finished queue
+                        if readyQueue: # check to see if something remains in readyqueue
+                            nextProcess=readyQueue.pop(0) # pop the next process off the ready queue 
+                            CPUQueue.append(nextProcess) # move the process to the CPU
+                        elif not readyQueue and IOQueue: # if ready is empty, but IO still has processes
+                            pass
                         else:
-                            print(f'{IO_pcbs[pid]} remaining in IO ')
+                            if not readyQueue and not IOQueue:
+                                complete=True        
+                    else: # not last CPU bursts so move to IO
+                        IOQueue.append(process) # move completed process to IO
+                        CPUQueue.clear() # empty CPU list
+                        nextProcess=readyQueue.pop(0) # pop the next process off the ready queue 
+                        CPUQueue.append(nextProcess) # move the process to the CPU
+                else:  # currently running process has remaining CPU time, keep PCB in CPU,
+                    remainingTime =process.cpubursrts[0]
+                    print(f'PCB-{process.pid} now in CPU with {remainingTime} seconds') 
+            else: #if cpu is empty add something    
+                if readyQueue: # is something in the ready queue
+                    nextProcess=self.readyQueue.pop(0) # pop the next process off the ready queue 
+                    CPUQueue.append(nextProcess) # move the process to the CPU
+                elif IOQueue and not readyQueue: # if ready is empty, but IO still has processes
+                    pass
+                else:
+                    if not readyQueue and not IOQueue and not newQueue:
+                        complete=True                   
+        # 6. check to see if any PCBs' in IO have current IO burst value == 0,  
+            if IOQueue:
+               completeIOprocesses =[process for process in IOQueue if process.iobursrsts[0] == 0]
+               for process in completeIOprocesses:
+                    print(f'PCB-{process.pid} has completed its current IO burst and moved to ready') 
+               IOQueue = [process for process in IOQueue if process.iobursrsts[0] != 0]
+               for process in IOQueue:
+                    remainingTime =process.iobursrts[0]
+                    print(f'PCB-{process.pid} has {remainingTime} seconds of IO remaining') 
+               readyQueue.extend(completeIOprocesses)
+               completeIOprocesses.clear()
+            else:
+                pass
+        
             time.sleep(2)
-            self.advanceClock(1)
+            self.clock.advanceClock(1)
 
-        # 7. pause 2 seconds time.sleep(2)
-        # 8. increment clock + 1 tick
-        # repeat loop
-
-
-
-        return finished_pcbs
 
 if __name__=='__main__':
     sim = Simulator("datafile.dat")
@@ -464,36 +465,36 @@ if __name__=='__main__':
     # ??loop over processes dict and to all this for each PCB?  
     # pass them to correct queue based on bool flags like CPU=T/F or IO=T/F
     
-    pcb_instance = sim.processes['PID-1'][0]  # create a convient variable to refer to each instance of the PCB class
-    if pcb_instance.currBurstIs=='CPU':
-        ###########################
-        # current CPU burst value #
-        ###########################
-        #check len of cpuburst list - list will eventually go to length 0,  currBurstIndex will always be [0] index
-        if 0<=pcb_instance.currBurstIndex < pcb_instance.noCpuBursts: 
-            currCpuBurst=pcb_instance.cpubursts[pcb_instance.currBurstIndex]
-            if currCpuBurst ==0:  # is the current index value 0? if so pop it off the list - cpu burst is done
-                pcb_instance.currBurstIndex.pop(0) 
-                IO=True
+    # pcb_instance = sim.processes['PID-1'][0]  # create a convient variable to refer to each instance of the PCB class
+    # if pcb_instance.currBurstIs=='CPU':
+    #     ###########################
+    #     # current CPU burst value #
+    #     ###########################
+    #     #check len of cpuburst list - list will eventually go to length 0,  currBurstIndex will always be [0] index
+    #     if 0<=pcb_instance.currBurstIndex < pcb_instance.noCpuBursts: 
+    #         currCpuBurst=pcb_instance.cpubursts[pcb_instance.currBurstIndex]
+    #         if currCpuBurst ==0:  # is the current index value 0? if so pop it off the list - cpu burst is done
+    #             pcb_instance.currBurstIndex.pop(0) 
+    #             IO=True
 
-            print(f"CPU Burst at index {pcb_instance.currBurstIndex}: {currCpuBurst}")
-            #return currCpuBurst value so it can be operated on by CPU class methods
-        elif 0<=pcb_instance.currBurstIndex < pcb_instance.noCpuBursts:
-            pass 
-    else:
-        ##########################
-        # current IO burst value #
-        ##########################
-        if 0<=pcb_instance.currBurstIndex < pcb_instance.noIoBursts: 
-            currIoBurst=pcb_instance.iobursts[pcb_instance.currBurstIndex]
-            if currIoBurst == 0:  # is the current index value 0? if so pop it off the list - cpu burst is done
-                pcb_instance.currBurstIndex.pop(0) 
-                IO=False
+    #         print(f"CPU Burst at index {pcb_instance.currBurstIndex}: {currCpuBurst}")
+    #         #return currCpuBurst value so it can be operated on by CPU class methods
+    #     elif 0<=pcb_instance.currBurstIndex < pcb_instance.noCpuBursts:
+    #         pass 
+    # else:
+    #     ##########################
+    #     # current IO burst value #
+    #     ##########################
+    #     if 0<=pcb_instance.currBurstIndex < pcb_instance.noIoBursts: 
+    #         currIoBurst=pcb_instance.iobursts[pcb_instance.currBurstIndex]
+    #         if currIoBurst == 0:  # is the current index value 0? if so pop it off the list - cpu burst is done
+    #             pcb_instance.currBurstIndex.pop(0) 
+    #             IO=False
 
-            print(f"IO Burst at index {pcb_instance.currBurstIndex}: {currIoBurst}")
-            #return currCpuBurst value so it can be operated on by CPU class methods
-        elif 0<=pcb_instance.currBurstIndex < pcb_instance.noIoBursts:
-            pass 
+    #         print(f"IO Burst at index {pcb_instance.currBurstIndex}: {currIoBurst}")
+    #         #return currCpuBurst value so it can be operated on by CPU class methods
+    #     elif 0<=pcb_instance.currBurstIndex < pcb_instance.noIoBursts:
+    #         pass 
         
     # if item:
     #     for attribute in ['arrivalTime', 'pid', 'priority','cpubursts','iobursts']:
