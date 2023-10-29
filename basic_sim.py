@@ -1,5 +1,6 @@
 # CPU Schecule Simulation
 """ """
+import os
 from rich import print
 from rich.text import Text
 import time
@@ -343,15 +344,18 @@ class Simulator:
         SIMULATION LOOP
         This method runs the Schedular Simulation
         """
-        # Create a table for displaying the queue contents
         table = PrettyTable()
-        table.field_names = ["Queue", "PID"]
-        
+        table.field_names = ["Clock", "Queue", "PID"]
+        table.align['PID'] ='c'
+        table.min_width["PID"] = 20  # Set the maximum width for the PID column
         complete = False
         loopIteration = 0
         # loop to check each process and match clock time to arrival time.
         while not complete: #loop until all processes are in finished[] 
-            print(f'The clock is {self.clock.currentTime()}')
+             # Create a table for displaying the queue contents
+            
+            
+            #print(f'The clock is {self.clock.currentTime()}')
         
         # 1. add 1 to wait_time for everything in readyQueue
             if self.readyQueue:
@@ -488,13 +492,15 @@ class Simulator:
         #     for process_key, process_value in processes.items():
         #         for pcb_instance in process_value: 
         #             print(f'{process_key} status: CPU:{pcb_instance.cpubursts}; IO:{pcb_instance.iobursts}; {pcb_instance.currBurstIs} : {pcb_instance.state}')
+            clock=self.clock.currentTime()
             # Update the table contents
+            os.system('cls' if os.name == 'nt' else 'clear')
             table.clear_rows()
-            table.add_row(["New", [pcb.pid for pcb in self.newQueue]])
-            table.add_row(["Ready", [pcb.pid for pcb in self.readyQueue]])
-            table.add_row(["CPU", [pcb.pid for pcb in self.CPUQueue]])
-            table.add_row(["IO", [pcb.pid for pcb in self.IOQueue]])
-            table.add_row(["Finished", [pcb.pid for pcb in self.finishedQueue]])
+            table.add_row(["","New", [pcb.pid for pcb in self.newQueue]])
+            table.add_row(["","Ready", [pcb.pid for pcb in self.readyQueue]])
+            table.add_row([clock,"CPU", [pcb.pid for pcb in self.CPUQueue]])
+            table.add_row(["","IO", [pcb.pid for pcb in self.IOQueue]])
+            table.add_row(["","Finished", [pcb.pid for pcb in self.finishedQueue]])
 
             # Print the table
             print(table)
