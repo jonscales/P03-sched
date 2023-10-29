@@ -356,10 +356,12 @@ class Simulator:
         # 1. add 1 to wait_time for everything in readyQueue
             if self.readyQueue:
                 for process in self.readyQueue:
+                    process.changeState('Ready')
                     process.incrementReadyTime() 
             else:
-                print(f'Ready queue currently empty')
-            
+                #print(f'Ready queue currently empty')
+                pass
+
         #2. move anything in new to ready
             if self.newQueue:
                 self.readyQueue.extend(self.newQueue)
@@ -374,12 +376,13 @@ class Simulator:
                     if pcb_instance.arrivalTime == self.clock.currentTime():
                         self.newQueue.append(pcb_instance)
                         pcb_instance.changeState('New')
-                        print(f'{pcb_instance} has been added to newQueue')
+                        #print(f'{pcb_instance} has been added to newQueue')
             else:
-                print(f'new queue is currently empty') 
+                #print(f'new queue is currently empty')
+                pass 
             if self.newQueue:
                 processes_in_new = [pcb.pid for pcb in self.newQueue]
-                print(f'The processes currently in new are: {processes_in_new}')    
+                #print(f'The processes currently in new are: {processes_in_new}')    
         
         # 4. decrement current CPU and IO processes bursts values
             if self.CPUQueue:
@@ -387,28 +390,30 @@ class Simulator:
                     if process.cpubursts:
                        process.cpubursts[0] -= 1
                        remainingTime = process.cpubursts[0]
-                       print(f'PCB-{process.pid} now in CPU with {remainingTime} seconds') 
+                       #print(f'PCB-{process.pid} now in CPU with {remainingTime} seconds') 
                     else:
                         pass
             else:    
-                print(f'CPU currently empty')
+                #print(f'CPU currently empty')
+                pass
             
             if self.IOQueue:
                 for process in self.IOQueue:
                     process.iobursts[0] -=1
                     remainingTime = process.iobursts[0]
-                    print(f'PCB-{process.pid} now in IO with {remainingTime} seconds') 
+                    #print(f'PCB-{process.pid} now in IO with {remainingTime} seconds') 
             else:    
-                print(f'IO currently empty')              
+                #print(f'IO currently empty')
+                pass              
 
         # 5. check if process in CPU 
             if self.CPUQueue:                                #is process in the CPU
                 process=self.CPUQueue[0]
                 if process.cpubursts[0] == 0:                #is process in CPU finished?
                     if len(process.cpubursts) <= 1:          # was this last CPU bursts for process?
+                        process.changeState('Finished')
                         self.finishedQueue.append(process)   # move process to finished queue
-                        print(f'process {process} has terminated')
-                        process.changState('Finished')
+                        #print(f'process {process} has terminated')
                         process.cpubursts.pop(0)             # remove finished burst from cpu bursts list
                         self.CPUQueue.clear()                # remove process form CPU 
                         if self.readyQueue:                  # are processes in readyqueue
@@ -434,7 +439,8 @@ class Simulator:
                                 pass    
                 else:                                        # running process has remaining CPU time, keep PCB in CPU,
                     remainingTime = process.cpubursts[0]
-                    print(f'PCB-{process.pid} now in CPU with {remainingTime} seconds') 
+                    #print(f'PCB-{process.pid} now in CPU with {remainingTime} seconds')
+                     
             else:                                            # if cpu is empty add something, 1st loop only    
                 if self.readyQueue:                          # is something in ready queue
                     nextProcess=self.readyQueue.pop(0)       # get next process from ready queue 
@@ -450,13 +456,13 @@ class Simulator:
             if self.IOQueue:
                 # make  temp list of complete processes
                 completeIOprocesses =[process for process in self.IOQueue if process.iobursts[0] == 0]
-                for process in completeIOprocesses: # just to print the complete list
-                    print(f'PCB-{process.pid} has completed its current IO burst and moved to ready')     
+                # for process in completeIOprocesses: # just to print the complete list
+                #     print(f'PCB-{process.pid} has completed its current IO burst and moved to ready')     
                 # update IO queue with only incomplete processes
                 self.IOQueue = [process for process in self.IOQueue if process.iobursts[0] != 0]
-                for process in self.IOQueue: # jsut to print the still running processes in IO
-                    remainingTime = process.iobursts[0]
-                    print(f'PCB-{process.pid} has {remainingTime} seconds of IO remaining') 
+                # for process in self.IOQueue: # jsut to print the still running processes in IO
+                #     remainingTime = process.iobursts[0]
+                #     print(f'PCB-{process.pid} has {remainingTime} seconds of IO remaining') 
                 # add the IO complete process back to ready queue
                 for process in completeIOprocesses:
                     process.changeState('Ready')
@@ -476,7 +482,7 @@ class Simulator:
             self.clock.advanceClock(1)
            
             # Display queues and process states
-            self.displayQueues(processes)
+            #self.displayQueues(processes)
 
         #    # print the processes
         #     for process_key, process_value in processes.items():
