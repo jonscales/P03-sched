@@ -3,6 +3,7 @@
 from rich import print
 from rich.text import Text
 import time
+from prettytable import PrettyTable
 
 class Queue:
     def __init__(self,pcb):
@@ -342,6 +343,10 @@ class Simulator:
         SIMULATION LOOP
         This method runs the Schedular Simulation
         """
+        # Create a table for displaying the queue contents
+        table = PrettyTable()
+        table.field_names = ["Queue", "PID"]
+        
         complete = False
         loopIteration = 0
         # loop to check each process and match clock time to arrival time.
@@ -472,11 +477,22 @@ class Simulator:
            
             # Display queues and process states
             self.displayQueues(processes)
+
         #    # print the processes
         #     for process_key, process_value in processes.items():
         #         for pcb_instance in process_value: 
         #             print(f'{process_key} status: CPU:{pcb_instance.cpubursts}; IO:{pcb_instance.iobursts}; {pcb_instance.currBurstIs} : {pcb_instance.state}')
-        
+            # Update the table contents
+            table.clear_rows()
+            table.add_row(["New", [pcb.pid for pcb in self.newQueue]])
+            table.add_row(["Ready", [pcb.pid for pcb in self.readyQueue]])
+            table.add_row(["CPU", [pcb.pid for pcb in self.CPUQueue]])
+            table.add_row(["IO", [pcb.pid for pcb in self.IOQueue]])
+            table.add_row(["Finished", [pcb.pid for pcb in self.finishedQueue]])
+
+            # Print the table
+            print(table)
+
         print(f'\n\n All processes have terminated\n\n')
 
     def displayQueues(self, processes):
