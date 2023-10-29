@@ -204,7 +204,7 @@ class PCB:
         self.arrivalTime = int(at)
         self.cpubursts = [int(burst) for burst in cpubursts]   
         self.iobursts = [int(burst) for burst in iobursts]
-        self.currBurstIs = 'CPU'
+        self.currBurstType = 'CPU'
         self.state='New'
         self.currBurstIndex = 0
         self.currCpuBurst = cpubursts[0]
@@ -213,8 +213,8 @@ class PCB:
         self.ioTime = 0
         self.cpuTime = 0
         self.ioTime =0
-        self.noCpuBursts =len(cpubursts)
-        self.noIoBursts =len(iobursts)
+        self.numCpuBursts =len(cpubursts)
+        self.numIoBursts =len(iobursts)
    
     def incrementReadyTime(self):
         self.readyTime += 1    
@@ -222,6 +222,9 @@ class PCB:
     def changeState(self, new_state):
         self.state = new_state
 
+    def changeBurstType(self,BT):
+        self.currBurstTYpe = BT
+    
     def getCurrBurstType(self):
         return self.currBurstIs
     
@@ -251,7 +254,10 @@ class PCB:
     def getTotIoTime(self):
         for i in range(len(self.iobursts)):
             self.ioTime+=int(self.iobursts[i])
-        return self.ioTime    
+        return self.ioTime 
+    
+    def getTotalTime(self):
+        return self.cpuTime + self.ioTime + self.readyTime  
     
     def __str__(self):
        
@@ -330,37 +336,39 @@ class Simulator:
                 
         return self.processes       
 
-    ###################
-    # SIMULATION LOOP #
-    ###################  
+    
     def simLoop(self, processes): 
         """ 
-        
-        
+        SIMULATION LOOP
+        This method runs the Schedular Simulation
         """
         complete = False
         loopIteration = 0
-       # loop to check each process and match clock time to arrival time.
+        # loop to check each process and match clock time to arrival time.
         while not complete: #loop until all processes are in finished[] 
             print(f'The clock is {self.clock.currentTime()}')
-         # 1. add 1 to wait_time for everything in readyQueue
+        
+        # 1. add 1 to wait_time for everything in readyQueue
             if self.readyQueue:
                 for process in self.readyQueue:
                     process.incrementReadyTime() 
             else:
-                print(f'Ready queue is currently empty')
+                print(f'Ready queue currently empty')
             
         #2. move anything in new to ready
             if self.newQueue:
-               self.readyQueue.extend(self.newQueue)
-               self.newQueue.clear()
+                self.readyQueue.extend(self.newQueue)
+                for process in self.readyQueue:
+                    process.changeState('Ready')
+                self.newQueue.clear()
            
-       # 3. check for new processes which may need to go to new if pcb arrival time == time, add pcb to new
+        # 3. check for new processes which may need to go to new if pcb arrival time == time, add pcb to new
             for process_key, process_value in processes.items():
                 for pcb_instance in process_value: 
                     #print(f'PCB instance is : {pcb_instance}')
                     if pcb_instance.arrivalTime == self.clock.currentTime():
                         self.newQueue.append(pcb_instance)
+                        pcb_instance.changeState('New')
                         print(f'{pcb_instance} has been added to newQueue')
             else:
                 print(f'new queue is currently empty') 
@@ -368,7 +376,7 @@ class Simulator:
                 processes_in_new = [pcb.pid for pcb in self.newQueue]
                 print(f'The processes currently in new are: {processes_in_new}')    
         
-        # 4. decrement all current CPU and IO processes bursts' values by 1
+        # 4. decrement current CPU and IO processes bursts values
             if self.CPUQueue:
                 for process in self.CPUQueue:
                     if process.cpubursts:
@@ -388,71 +396,117 @@ class Simulator:
             else:    
                 print(f'IO currently empty')              
 
-        # 5. check if process in CPU , 
+        # 5. check if process in CPU 
             if self.CPUQueue:                                #is process in the CPU
                 process=self.CPUQueue[0]
-                
-                if process.cpubursts[0] == 0:                #is the process in CPU finished?
-                    if len(process.cpubursts) <= 1:          # was this the last CPU bursts of running process?
-                        self.finishedQueue.append(process)  # move the finished process to finished queue
+                if process.cpubursts[0] == 0:                #is process in CPU finished?
+                    if len(process.cpubursts) <= 1:          # was this last CPU bursts for process?
+                        self.finishedQueue.append(process)   # move process to finished queue
                         print(f'process {process} has terminated')
-                        process.cpubursts.pop(0)             # remove the finished burst from the cpue bursts list
-                        self.CPUQueue.clear()
-                        if self.readyQueue: # check to see if something remains in readyqueue
-                            nextProcess=self.readyQueue.pop(0) # pop the next process off the ready queue 
-                            self.CPUQueue.append(nextProcess) # move the process to the CPU
-                        elif not self.readyQueue and self.IOQueue: # if ready is empty, but IO still has processes
+                        process.changState('Finished')
+                        process.cpubursts.pop(0)             # remove finished burst from cpu bursts list
+                        self.CPUQueue.clear()                # remove process form CPU 
+                        if self.readyQueue:                  # are processes in readyqueue
+                            nextProcess=self.readyQueue.pop(0) # get next process fromready queue 
+                            self.CPUQueue.append(nextProcess)  # move next process to the CPU
+                            nextProcess.changeState('CPU')  
+                        elif not self.readyQueue and self.IOQueue: # if ready is empty, but IO still has processes continue
                             pass
                         else:
                             if loopIteration > 1 and not self.readyQueue and not self.IOQueue:
                                 complete=True        
                     else:                                   # not last CPU bursts so move to IO
                         self.IOQueue.append(process)        # move completed process to IO
+                        process.changeState('IO')
                         if process.cpubursts:               
                             process.cpubursts.pop(0) 
-                            self.CPUQueue.clear()           # empty CPU list
+                            self.CPUQueue.clear()           # empty CPU 
                             if self.readyQueue:
-                                nextProcess=self.readyQueue.pop(0) # pop the next process off the ready queue 
-                                self.CPUQueue.append(nextProcess) # move the process to the CPU
+                                nextProcess=self.readyQueue.pop(0)  # get next process from ready  
+                                self.CPUQueue.append(nextProcess)   # move process to CPU
+                                nextProcess.changeState('CPU')
                             else:
                                 pass    
-                else:  # currently running process has remaining CPU time, keep PCB in CPU,
+                else:                                        # running process has remaining CPU time, keep PCB in CPU,
                     remainingTime = process.cpubursts[0]
                     print(f'PCB-{process.pid} now in CPU with {remainingTime} seconds') 
-            else: #if cpu is empty add something    
-                if self.readyQueue: # is something in the ready queue
-                    nextProcess=self.readyQueue.pop(0) # pop the next process off the ready queue 
-                    self.CPUQueue.append(nextProcess) # move the process to the CPU
-                elif self.IOQueue and not self.readyQueue: # if ready is empty, but IO still has processes
+            else:                                            # if cpu is empty add something, 1st loop only    
+                if self.readyQueue:                          # is something in ready queue
+                    nextProcess=self.readyQueue.pop(0)       # get next process from ready queue 
+                    self.CPUQueue.append(nextProcess)        # move process to CPU
+                    nextProcess.changeState('CPU')
+                elif self.IOQueue and not self.readyQueue:   # if ready is empty, but IO still has processes, continue
                     pass
-                else:
+                else: # if everything is empty and loop has gone >1 processes are complete
                     if loopIteration > 1 and not self.readyQueue and not self.IOQueue and not self.newQueue:
                         complete=True                   
-        # 6. check to see if any PCBs' in IO have current IO burst value == 0,  
+        
+        # 6. check if any PCBs' in IO have current IO burst value == 0,  
             if self.IOQueue:
+                # make  temp list of complete processes
                 completeIOprocesses =[process for process in self.IOQueue if process.iobursts[0] == 0]
-                for process in completeIOprocesses:
-                    print(f'PCB-{process.pid} has completed its current IO burst and moved to ready')
-                     
+                for process in completeIOprocesses: # just to print the complete list
+                    print(f'PCB-{process.pid} has completed its current IO burst and moved to ready')     
+                # update IO queue with only incomplete processes
                 self.IOQueue = [process for process in self.IOQueue if process.iobursts[0] != 0]
-                for process in self.IOQueue:
+                for process in self.IOQueue: # jsut to print the still running processes in IO
                     remainingTime = process.iobursts[0]
                     print(f'PCB-{process.pid} has {remainingTime} seconds of IO remaining') 
+                # add the IO complete process back to ready queue
+                for process in completeIOprocesses:
+                    process.changeState('Ready')
                 self.readyQueue.extend(completeIOprocesses)
+                
+                # remove the io burst from the iobursts list in PCB
                 for process in completeIOprocesses:
                     if process.iobursts[0]==0:
                        process.iobursts.pop(0)
-                completeIOprocesses.clear()
-            else:
+                # clear the temp complete IO processes list
+                completeIOprocesses.clear()  
+            else: # if IOQueue empty continue
                 pass
                 
             time.sleep(.1)
             loopIteration += 1
             self.clock.advanceClock(1)
-            for process_key, process_value in processes.items():
-                for pcb_instance in process_value: 
-                    print(f'{process_key} status: CPU:{pcb_instance.cpubursts}; IO:{pcb_instance.iobursts}; {pcb_instance.currBurstIs} : {pcb_instance.state}')
+           
+            # Display queues and process states
+            self.displayQueues(processes)
+        #    # print the processes
+        #     for process_key, process_value in processes.items():
+        #         for pcb_instance in process_value: 
+        #             print(f'{process_key} status: CPU:{pcb_instance.cpubursts}; IO:{pcb_instance.iobursts}; {pcb_instance.currBurstIs} : {pcb_instance.state}')
+        
         print(f'\n\n All processes have terminated\n\n')
+
+    def displayQueues(self, processes):
+        # Define queue column headings
+        queue_headings = ['New', 'Ready', 'CPU', 'IO', 'Finished']
+
+        # Initialize columns for each queue
+        queue_columns = {queue: [] for queue in queue_headings}
+
+        # Populate columns with running processes
+        for process_key, process_value in processes.items():
+            for pcb_instance in process_value:
+                if pcb_instance.state == 'New':
+                    queue_columns['New'].append(f'PID-{pcb_instance.pid}')
+                elif pcb_instance.state == 'Ready':
+                    queue_columns['Ready'].append(f'PID-{pcb_instance.pid}')
+                elif pcb_instance.state == 'CPU':
+                    queue_columns['CPU'].append(f'PID-{pcb_instance.pid}')
+                elif pcb_instance.state == 'IO':
+                    queue_columns['IO'].append(f'PID-{pcb_instance.pid}')
+                elif pcb_instance.state == 'Finished':
+                    queue_columns['Finished'].append(f'PID-{pcb_instance.pid}')
+
+        # Display the queues
+        for heading in queue_headings:
+            print(f'{heading}:')
+            for process in queue_columns[heading]:
+                print(process)
+            print()
+
 
 if __name__=='__main__':
     sim = Simulator("datafile.dat")
