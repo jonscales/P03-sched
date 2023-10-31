@@ -8,7 +8,7 @@ from rich import print
 from rich.text import Text
 import time
 from prettytable import PrettyTable
-
+import csv
 # class Queue:
 #     def __init__(self,pcb):
 #         self.queue = []
@@ -213,11 +213,12 @@ class Stats:
     through the schedular.  It will also output this information as a .csv file
     for use in other applications. 
     """    
-    def __init__(self, processes, clock):
+    def __init__(self, processes, simType, clock):
         """
         Stats initialization
         """
         self.processes = processes
+        self.symType =simType
         self.clock = clock
         self.statTable(clock)
     
@@ -252,6 +253,43 @@ class Stats:
                                      pcb.run_waitRatio()])
         print(titleTable)
         print(statTable)
+
+    def statFileWriter(self, simType='none'):
+        """
+        """ 
+        # dictionary to match output filename to simulation run type
+        sim_type_to_fname = {
+            'SCPU': 'SCPU_stat_data.csv',
+            'SIO': 'SIO_stat_data.csv',
+            'LCPU': 'LCPU_stat_data.csv',
+            'LIO': 'LIO_stat_data.csv',
+            'HBCt':'HBCt_stat_data.csv',
+            'LBCt':'LBCt_stat_data.csv',                
+            }
+        if simType=='None':
+            outFileName ='SimStatsData.csv'
+        else:
+            outFileName=sim_type_to_fname.get(self.simType, 'SimStatsData.csv')
+       
+        with open(outFileName, 'w', newline='') as csvfile:
+            fieldnames = ["PID", "Total Time", "CPU Time", "IO Time", "Wait Time","CPU/IO", "Run/Wait"]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+            # Write the header row to the CSV file
+            writer.writeheader()
+
+            # Write data for each PCB
+            for pid, pcb_instances in self.processes.items():
+                for pcb in pcb_instances:
+                    data = {
+                        'ProcessID': pcb.pid,
+                        'Total Time': pcb.getTotalTime(),
+                        'CPU Time': pcb.cpuTime,
+                        'IO Time' : pcb.ioTime,
+                        'CPU/IO': pcb.cpu_ioRatio(),
+                        'Run/Wait': pcb.run_waitRatio()                    
+                            }
+            writer.writerow(data) 
                
 class Simulator:
     """
@@ -260,10 +298,11 @@ class Simulator:
       read in the data from a file
       run the simulation loop
     """
-    def __init__(self,datfile):
+    def __init__(self,datfile, symType):
         """
         Simulator initialization
         """
+        self.simType = simType
         self.datfile = datfile
         self.processes = {}
         self.readData()
