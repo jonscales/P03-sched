@@ -384,7 +384,10 @@ class Simulator:
 
         # 5. check if process in CPU 
             if self.CPUQueue:                                #is process in the CPU
+                #going to need a for loop to check for multiple processes in CPUQueue
+                # limit length of CPUQueue to 2 or 4 items
                 process=self.CPUQueue[0]
+                #another loop to check if any processes are == 0 
                 if process.cpubursts[0] == 0:                #is process in CPU finished?
                     if len(process.cpubursts) <= 1:          # was this last CPU bursts for process?
                         process.changeState('Finished')
