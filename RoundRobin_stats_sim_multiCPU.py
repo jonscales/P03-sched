@@ -301,11 +301,10 @@ class Simulator:
       read in the data from a file
       run the simulation loop
     """
-    def __init__(self,datfile, num_cpus,TS):
+    def __init__(self,datfile, num_cpus):
         """
         Simulator initialization
         """
-        self.timeSlice=int(TS)
         self.datfile = datfile
         self.num_cpus =int(num_cpus)
         self.processes = {}
@@ -361,6 +360,7 @@ class Simulator:
                 
         return self.processes       
 
+    
     def simLoop(self, processes, num_cpus): 
         """ 
         SIMULATION LOOP
@@ -376,6 +376,7 @@ class Simulator:
         
         # loop to check each process and match clock time to arrival time.
         while not complete: #loop until all processes are in finished[]  
+            #print(f'The clock is {self.clock.currentTime()}')
         
         # 1. add 1 to wait_time for everything in readyQueue
             if self.readyQueue:
@@ -401,6 +402,9 @@ class Simulator:
             else:
                 #print(f'new queue is currently empty')
                 pass 
+            if self.newQueue:
+                processes_in_new = [pcb.pid for pcb in self.newQueue]
+                #print(f'The processes currently in new are: {processes_in_new}')    
         
         # 4. decrement current CPU and IO processes bursts values
             if self.CPUQueue:
@@ -443,13 +447,14 @@ class Simulator:
                     for process in next_processes:
                         process.changeState('CPU')
                     self.readyQueue = self.readyQueue[num_to_assign:] 
-                elif self.CPUQueue and self.IOQueue and not self.readyQueue: # if ready is empty, but IO still has processes continue
+                elif not self.readyQueue and self.IOQueue: # if ready is empty, but IO still has processes continue
                     pass
                 else:
-                    if loopIteration > 1 and not self.readyQueue and not self.IOQueue and not self.CPUQueue:
+                    if loopIteration > 1 and not self.readyQueue and not self.IOQueue:
                         complete=True        
-                    else: # running process has remaining CPU time, keep PCB in CPU,
-                        pass   
+    
+                    else:                                        # running process has remaining CPU time, keep PCB in CPU,
+                        remainingTime = process.cpubursts[0]         
             else:                                            # if cpu is empty add something, 1st loop only    
                 if self.readyQueue and (not self.CPUQueue or len(self.CPUQueue) < self.num_cpus): # are processes in readyqueue & is CPU not full
                     num_to_assign = min(num_cpus -len(self.CPUQueue), len(self.readyQueue))
@@ -461,7 +466,7 @@ class Simulator:
                 elif not self.readyQueue and self.IOQueue: # if ready is empty, but IO still has processes continue
                     pass
                 else:
-                    if loopIteration > 1 and not self.CPUQueue and not self.readyQueue and not self.IOQueue:
+                    if loopIteration > 1 and not self.readyQueue and not self.IOQueue:
                         complete=True                      
         
         # 6. check if any PCBs' in IO have current IO burst value == 0,  
@@ -516,7 +521,7 @@ class Simulator:
 
     
 if __name__=='__main__':
-    sim = Simulator("datafile.dat",'1','20')
+    sim = Simulator("datafile.dat",'17')
     stats=Stats(sim.getProcesses(),sim.clock)
    
    
