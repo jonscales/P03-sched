@@ -9,6 +9,7 @@ from rich.text import Text
 import time
 from prettytable import PrettyTable
 import csv
+import shutil
 # class Queue:
 #     def __init__(self,pcb):
 #         self.queue = []
@@ -381,9 +382,12 @@ class Simulator:
         """
         # Create a table for displaying the queue contents
         table = PrettyTable()
+        terminal_width = shutil.get_terminal_size().columns
+        table.max_width = int(.9 * terminal_width)
+    
         table.field_names = ["Clock", "Queue", "PID"]
-        table.align['PID'] ='c'
-        table.min_width["PID"] = 50  # Set the maximum width for the PID column
+        table.align = 'c'
+    
         complete = False
         loopIteration = 0
         
@@ -527,12 +531,14 @@ class Simulator:
             os.system('cls' if os.name == 'nt' else 'clear')
             print(f'[bold][green]Process Progress Table[/bold][/green]')
             table.clear_rows()
+            table.align['PID'] = 'l'
             table.add_row(["","New", [pcb.pid for pcb in self.newQueue]])
             table.add_row(["","Ready", [pcb.pid for pcb in self.readyQueue]])
             table.add_row([clock,"CPU", [(pcb.pid, pcb.remainingCPUTime) for pcb in self.CPUQueue]])
             table.add_row(["","Wait",[pcb.pid for pcb in self.waitQueue]])
             table.add_row(["","IO", [(pcb.pid, pcb.remainingIOTime) for pcb in self.IOQueue]])
             table.add_row(["","Finished", [pcb.pid for pcb in self.finishedQueue]])
+            
 
             # Print the table
             print(table)
