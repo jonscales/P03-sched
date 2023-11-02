@@ -541,7 +541,7 @@ class Simulator:
         
 
 
-    
+
 if __name__=='__main__':
     sim = Simulator("datafile.dat",'2','6')
     stats=Stats(sim.getProcesses(),sim.clock)
