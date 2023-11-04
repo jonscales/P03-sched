@@ -362,8 +362,15 @@ class Simulator:
                 arrival = parts[0]
                 pid = parts[1]
                 priority = int(parts[2][1:])
-                cpubursts=parts[3::2] #gets every other burst starting at 3
-                iobursts=parts[4::2] # gets every other burst starting at 4
+                bursts = parts[3:]
+                cpubursts=[] 
+                iobursts=[]
+                # parse bursts into CPU & IO
+                for i in range(len(bursts)):
+                    if i%2==0:
+                        cpubursts.append(bursts[i])
+                    else:
+                        iobursts.append(bursts[i])
 
                 #create dictionary of all processes with PID as key and values are PCBs        
                 pcb_key=f'PID-{pid}' # use pid to be key for each PCB
