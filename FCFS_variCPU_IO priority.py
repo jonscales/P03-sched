@@ -89,8 +89,9 @@ class PCB:
         self.ioTime = self.getTotIoTime()
         self.numCpuBursts =len(cpubursts)
         self.numIoBursts =len(iobursts)
-        self.remainingCPUTime = 0
-        self.remainingIOTime =0
+        self.remainingCPUTime = int(cpubursts[0])
+        self.remainingIOTime = int(iobursts[0])
+
    
     def upPriority(self):
         """
@@ -486,6 +487,8 @@ class Simulator:
             # for pcb in self.readyQueue:
             #     print(f'{pcb.pid}:{pcb}')
         # 5B check if process in CPU and if any are finished
+          
+
             if self.CPUQueue:                                #is process in the CPU
                 lowestCPU = min(self.CPUQueue, key=lambda pcb:pcb.priority)
                 print(f'Lowest priority PCB in CPU = {lowestCPU.pid}')
@@ -507,11 +510,12 @@ class Simulator:
                 self.readyQueue = sorted(self.readyQueue, key=lambda pcb: (pcb.priority), reverse=True)
         #5C check if any ready processes have higher priority & swap with lower CPU processes - loop till all swapped
                 
-                while self.readyQueue and self.readyQueue[0].priority > lowestCPU.priority:
-                    print(f'1 process in sorted ready queue: {self.readyQueue[0].pid}')
+             
+                while loopIteration >= 3 and self.readyQueue and (self.readyQueue[0].priority > lowestCPU.priority) and self.readyQueue[0].readyTime >=1:
+                    print(f'1st process in sorted ready queue: {self.readyQueue[0].pid}')
                     highestReady = self.readyQueue[0]
                     print(f'highest priority in sorted ready queue: {highestReady.pid}')
-                    print(f'Highest priority PCB in ready = {highestReady.pid}')
+                
                     try:
                         self.CPUQueue.remove(lowestCPU)
                         print(f'PCB {lowestCPU.pid} removed from CPU')
@@ -530,10 +534,10 @@ class Simulator:
                 
                 self.readyQueue = [pcb for pcb in self.readyQueue if pcb.state =='Ready']  # update ready 
                 self.CPUQueue = [pcb for pcb in self.CPUQueue if pcb.state =='CPU']  # update CPU 
-                self.readyQueue = sorted(self.readyQueue, key=lambda pcb: (pcb.priority))
+                self.readyQueue = sorted(self.readyQueue, key=lambda pcb: (pcb.priority),reverse=True)
         #5D
-                if self.readyQueue and (not self.CPUQueue or len(self.CPUQueue) < self.num_cpus): # are processes in readyqueue & is CPU not full
-                    num_to_assign =min(self.num_cpus -len(self.CPUQueue), len(self.readyQueue))
+                if self.readyQueue and loopIteration >= 1 and (not self.CPUQueue or len(self.CPUQueue) < self.num_cpus): # are processes in readyqueue & is CPU not full
+                    num_to_assign =min(self.num_cpus - len(self.CPUQueue), len(self.readyQueue))
                     next_processes = self.readyQueue[:num_to_assign] # get # of process from ready queue needed to fill CPU
                     self.CPUQueue.extend(next_processes)  # move next processes to the CPU 
                     for process in next_processes:
@@ -542,15 +546,15 @@ class Simulator:
                 elif self.CPUQueue and self.IOQueue and not self.readyQueue: # if ready is empty, but IO still has processes continue
                     pass
                 else:
-                    if loopIteration > 1 and not self.readyQueue and not self.IOQueue and not self.CPUQueue:
+                    if loopIteration > 1 and not self.readyQueue and not self.IOQueue and not self.CPUQueue and not self.waitQueue:
                         complete=True        
                     else: # running process has remaining CPU time, keep PCB in CPU,
                         pass   
             else:                                            # if cpu is empty add something, 1st loop only    
                 
-                self.readyQueue = sorted(self.readyQueue, key=lambda pcb: (pcb.priority))
+                self.readyQueue = sorted(self.readyQueue, key=lambda pcb: (pcb.priority),reverse=True)
                 
-                if self.readyQueue and (not self.CPUQueue or len(self.CPUQueue) < self.num_cpus): # are processes in readyqueue & is CPU not full
+                if loopIteration >=2 and self.readyQueue and (not self.CPUQueue or len(self.CPUQueue) < self.num_cpus): # are processes in readyqueue & is CPU not full
                     num_to_assign =min(self.num_cpus -len(self.CPUQueue), len(self.readyQueue))
                     next_processes = self.readyQueue[:num_to_assign] # get # of process from ready queue needed to fill CPU
                     self.CPUQueue.extend(next_processes)  # move next processes to the CPU 
@@ -560,7 +564,7 @@ class Simulator:
                 elif not self.readyQueue and self.IOQueue: # if ready is empty, but IO still has processes continue
                     pass
                 else:
-                    if loopIteration > 1 and not self.CPUQueue and not self.readyQueue and not self.IOQueue:
+                    if loopIteration > 1 and not self.CPUQueue and not self.readyQueue and not self.IOQueue and not self.waitQueue:
                         complete=True                      
         
         # 6. check if any PCBs' in IO have current IO burst value == 0,  
@@ -589,21 +593,33 @@ class Simulator:
                 
                 if self.waitQueue and (not self.IOQueue or len(self.IOQueue) < self.num_ios): # are processes in waitqueue & is IO not full
                     num_to_assign =min(self.num_ios - len(self.IOQueue), len(self.waitQueue))
-                    next_processes = self.waitQueue[:num_to_assign] # get # of process from wait queue needed to fill IO
-                    self.IOQueue.extend(next_processes)  # move next processes to the IO 
+                    next_processes =[]
+                    potential_next_processes = self.waitQueue[:num_to_assign] 
+                    for pcb in potential_next_processes:
+                        if pcb.waitTime >=1:
+                            next_processes = next_processes.append(pcb)
+
+                            # get # of process from wait queue needed to fill IO
+                      # move next processes to the IO 
                     for process in next_processes:
                         process.changeState('IO')
+                    self.IOQueue.extend(next_processes)
                     self.waitQueue = self.waitQueue[num_to_assign:] 
-                    self.waitQueue = [pcb for pcb in self.waitQueue if pcb.state =='Wait']  # update ready
+                    self.waitQueue = [pcb for pcb in self.waitQueue if pcb.state == 'Wait']  # update ready
                     self.readyQueue = sorted(self.readyQueue, key=lambda pcb: (pcb.priority))
                     self.IOQueue = [pcb for pcb in self.IOQueue if pcb.state =='IO']  # update IO 
             else:
                 if self.waitQueue and (not self.IOQueue or len(self.IOQueue) < self.num_ios): # are processes in waitqueue & is IO not full
                     num_to_assign =min(self.num_ios - len(self.IOQueue), len(self.waitQueue))
-                    next_processes = self.waitQueue[:num_to_assign] # get # of process from wait queue needed to fill IO
-                    self.IOQueue.extend(next_processes)  # move next processes to the IO 
+                    next_processes = []
+                    potential_next_processes = self.waitQueue[:num_to_assign] 
+                    for pcb in potential_next_processes:
+                        if pcb.waitTime >=1:
+                            next_processes = next_processes.append(pcb)
                     for process in next_processes:
                         process.changeState('IO')
+                    self.waitQueue[:num_to_assign] # get # of process from wait queue needed to fill IO
+                    self.IOQueue.extend(next_processes)  # move next processes to the IO 
                     
                     self.waitQueue = self.waitQueue[num_to_assign:] 
                     self.waitQueue = [pcb for pcb in self.waitQueue if pcb.state =='Wait']  # update ready
@@ -614,7 +630,8 @@ class Simulator:
             time.sleep(.5)
             loopIteration += 1
             self.clock.advanceClock(1)
-           
+            
+            
         #    # print the processes
             # for process_key, process_value in processes.items():
             #     for pcb_instance in process_value: 
@@ -636,6 +653,8 @@ class Simulator:
 
             #Print the table
             print(table)
+            input("press enter")
+            continue
 
         print(f'\n[bold][red] All processes have terminated[/red][/bold]\n')
         
