@@ -11,7 +11,7 @@ from prettytable import PrettyTable
 import csv
 import shutil
 from colorama import Fore, Style, init
-
+init(autoreset=True)
 # class Queue:
 #     def __init__(self,pcb):
 #         self.queue = []
@@ -252,9 +252,9 @@ class Stats:
         self.processes = simulator.processes
         self.symType =simulator.simType
         self.clock = simulator.clock
-        # self.runningTable(simulator.clock)
-        # self.statTable(simulator.clock)
-        # self.statFileWriter(simulator.clock, simulator.simType)
+        #self.runningTable(simulator.clock)
+        self.statTable(simulator.clock)
+        self.statFileWriter(simulator.clock, simulator.simType)
     
     def statTable(self,clock):
         """
@@ -290,64 +290,64 @@ class Stats:
         print(titleTable)
         print(statTable)
    
-    def runningTable(self,clock):
-        # Create a table for displaying the queue contents
-        New = self.simulator.getNew()
-        Ready = self.simulator.getReady()
-        Cpu = self.simulator.getCPU()
-        Wait = self.simulator.getWait()
-        Io = self.simulator.getIO()
-        Finished = self.simulator.getFinished()
-        init(autoreset=True)
-        runningTable = PrettyTable()
-        # #Color info
-        # R = "\033[91m" #RED
-        # G = "\033[92" # GREEN
-        # Y = "\033[93m" # Yellow
-        # B = "\033[94m" # Blue
-        # P = '\033[95m' # Purple
-        # C = '\033[96m' #cyan
-        # DC= '\033[36m' # dark cyan
-        # M = '\033[95m' # magenta
-        # BLD = '\033[1m' # bold
-        # U = '\033[4m' # underline
-        # N = "\033[0m" # Reset
+    # def runningTable(self,clock):
+    #     # Create a table for displaying the queue contents
+    #     New = self.simulator.getNew()
+    #     Ready = self.simulator.getReady()
+    #     Cpu = self.simulator.getCPU()
+    #     Wait = self.simulator.getWait()
+    #     Io = self.simulator.getIO()
+    #     Finished = self.simulator.getFinished()
+       
+    #     runningTable = PrettyTable()
+    #     # #Color info
+    #     # R = "\033[91m" #RED
+    #     # G = "\033[92" # GREEN
+    #     # Y = "\033[93m" # Yellow
+    #     # B = "\033[94m" # Blue
+    #     # P = '\033[95m' # Purple
+    #     # C = '\033[96m' #cyan
+    #     # DC= '\033[36m' # dark cyan
+    #     # M = '\033[95m' # magenta
+    #     # BLD = '\033[1m' # bold
+    #     # U = '\033[4m' # underline
+    #     # N = "\033[0m" # Reset
 
-        def formattedNew(pcb):
-            fNew = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL}'
-            return fNew
-        def formattedReady(pcb):
-            fReady = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL} : {Fore.RED}{pcb.priority}{Style.RESET_ALL} : {Fore.MAGENTA}{pcb.readyTime}{Style.RESET_ALL}' 
-            return fReady
-        def formattedWait(pcb):
-            fWait = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL} : {Fore.RED}{pcb.priority}{Style.RESET_ALL} : {Fore.MAGENTA}{pcb.waitTime}{Style.RESET_ALL}'
-            return fWait
-        def formattedCPU(pcb):
-            fCPU = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL} : {Fore.RED}{pcb.priority}{Style.RESET_ALL} : {Fore.GREEN}{pcb.remainingCPUTime}{Style.RESET_ALL}'
-            return fCPU
-        def formattedIO(pcb):
-            fIO = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL} : {Fore.RED}{pcb.priority}{Style.RESET_ALL} : {Fore.GREEN}{pcb.remainingIOTime}{Style.RESET_ALL}'
-            return fIO
-        def formattedFinished(pcb):
-            fFinished = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL}'
-            return fFinished
+    #     def formattedNew(pcb):
+    #         fNew = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL}'
+    #         return fNew
+    #     def formattedReady(pcb):
+    #         fReady = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL} : {Fore.RED}{pcb.priority}{Style.RESET_ALL} : {Fore.MAGENTA}{pcb.readyTime}{Style.RESET_ALL}' 
+    #         return fReady
+    #     def formattedWait(pcb):
+    #         fWait = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL} : {Fore.RED}{pcb.priority}{Style.RESET_ALL} : {Fore.MAGENTA}{pcb.waitTime}{Style.RESET_ALL}'
+    #         return fWait
+    #     def formattedCPU(pcb):
+    #         fCPU = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL} : {Fore.RED}{pcb.priority}{Style.RESET_ALL} : {Fore.GREEN}{pcb.remainingCPUTime}{Style.RESET_ALL}'
+    #         return fCPU
+    #     def formattedIO(pcb):
+    #         fIO = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL} : {Fore.RED}{pcb.priority}{Style.RESET_ALL} : {Fore.GREEN}{pcb.remainingIOTime}{Style.RESET_ALL}'
+    #         return fIO
+    #     def formattedFinished(pcb):
+    #         fFinished = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL}'
+    #         return fFinished
         
-        terminal_width = shutil.get_terminal_size().columns
-        runningTable.max_width = int(.9 * terminal_width)
+    #     terminal_width = shutil.get_terminal_size().columns
+    #     runningTable.max_width = int(.9 * terminal_width)
     
-        runningTable.field_names = [f"{DC}Clk{N}", f"{Y}Q{N}", f"{B}PID{N} {R}Priority{N} {G}Burst Time{N}/{M}Idle Time{N}"]
-        runningTable.align = 'l'
+    #     runningTable.field_names = [f"{Fore.CYAN}Clk{Style.RESET_ALL}", f"{Fore.YELLOW}Q{Style.RESET_ALL}", f"{Fore.BLUE}PID{Style.RESET_ALL} {Fore.RED}Priority{Style.RESET_ALL} {Fore.GREEN}Burst Time{Style.RESET_ALL}/{Fore.MAGENTA}Idle Time{Style.RESET_ALL}"]
+    #     runningTable.align = 'l'
         
         
-        runningTable.clear_rows()
-        runningTable.align['PID'] = 'l'
-        runningTable.add_row(["","N", [formattedNew(pcb) for pcb in New]])
-        runningTable.add_row(["","R", [formattedReady(pcb) for pcb in Ready]])
-        runningTable.add_row([clock,"C", [formattedCPU(pcb) for pcb in Cpu]])
-        runningTable.add_row(["","W",[formattedWait(pcb) for pcb in Wait]])
-        runningTable.add_row(["","I", [formattedIO(pcb) for pcb in Io]])
-        runningTable.add_row(["","F", [formattedFinished(pcb) for pcb in Finished]])
-        return runningTable    
+    #     runningTable.clear_rows()
+    #     runningTable.align['PID'] = 'l'
+    #     runningTable.add_row(["","N", [formattedNew(pcb) for pcb in New]])
+    #     runningTable.add_row(["","R", [formattedReady(pcb) for pcb in Ready]])
+    #     runningTable.add_row([clock,"C", [formattedCPU(pcb) for pcb in Cpu]])
+    #     runningTable.add_row(["","W",[formattedWait(pcb) for pcb in Wait]])
+    #     runningTable.add_row(["","I", [formattedIO(pcb) for pcb in Io]])
+    #     runningTable.add_row(["","F", [formattedFinished(pcb) for pcb in Finished]])
+    #     return runningTable    
 
 
     def statFileWriter(self, clock, simType='none'):
