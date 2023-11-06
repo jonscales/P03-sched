@@ -298,40 +298,40 @@ class Stats:
         Wait = self.simulator.getWait()
         Io = self.simulator.getIO()
         Finished = self.simulator.getFinished()
-        
-        #Color info
-        R = "\033[91m" #RED
-        G = "\033[92" # GREEN
-        Y = "\033[93m" # Yellow
-        B = "\033[94m" # Blue
-        P = '\033[95m' # Purple
-        C = '\033[96m' #cyan
-        DC= '\033[36m' # dark cyan
-        M = '\033[95m' # magenta
-        BLD = '\033[1m' # bold
-        U = '\033[4m' # underline
-        N = "\033[0m" # Reset
+        init(autoreset=True)
+        runningTable = PrettyTable()
+        # #Color info
+        # R = "\033[91m" #RED
+        # G = "\033[92" # GREEN
+        # Y = "\033[93m" # Yellow
+        # B = "\033[94m" # Blue
+        # P = '\033[95m' # Purple
+        # C = '\033[96m' #cyan
+        # DC= '\033[36m' # dark cyan
+        # M = '\033[95m' # magenta
+        # BLD = '\033[1m' # bold
+        # U = '\033[4m' # underline
+        # N = "\033[0m" # Reset
 
         def formattedNew(pcb):
-            fNew = f'{B}{pcb.pid}{N}'
+            fNew = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL}'
             return fNew
         def formattedReady(pcb):
-            fReady = f'{B}{pcb.pid}{N} : {R}{pcb.priority}{N} : {M}{pcb.readyTime}{N}' 
+            fReady = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL} : {Fore.RED}{pcb.priority}{Style.RESET_ALL} : {Fore.MAGENTA}{pcb.readyTime}{Style.RESET_ALL}' 
             return fReady
         def formattedWait(pcb):
-            fWait = f'{B}{pcb.pid}{N} : {R}{pcb.priority}{N} : {M}{pcb.waitTime}{N}'
+            fWait = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL} : {Fore.RED}{pcb.priority}{Style.RESET_ALL} : {Fore.MAGENTA}{pcb.waitTime}{Style.RESET_ALL}'
             return fWait
         def formattedCPU(pcb):
-            fCPU = f'{B}{pcb.pid}{N} : {R}{pcb.priority}{N} : {G}{pcb.remainingCPUTime}{N}'
+            fCPU = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL} : {Fore.RED}{pcb.priority}{Style.RESET_ALL} : {Fore.GREEN}{pcb.remainingCPUTime}{Style.RESET_ALL}'
             return fCPU
         def formattedIO(pcb):
-            fIO = f'{B}{pcb.pid}{N} : {R}{pcb.priority}{N} : {G}{pcb.remainingIOTime}{N}'
+            fIO = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL} : {Fore.RED}{pcb.priority}{Style.RESET_ALL} : {Fore.GREEN}{pcb.remainingIOTime}{Style.RESET_ALL}'
             return fIO
         def formattedFinished(pcb):
-            fFinished = f'{B}{pcb.pid}{N}'
+            fFinished = f'{Fore.BLUE}{pcb.pid}{Style.RESET_ALL}'
             return fFinished
-
-        runningTable = PrettyTable()
+        
         terminal_width = shutil.get_terminal_size().columns
         runningTable.max_width = int(.9 * terminal_width)
     
