@@ -337,7 +337,7 @@ class Simulator:
         self.waitQueue = []
         self.finishedQueue =[]
         self.clock = SysClock()   
-        self.simLoop(self.processes, self.num_cpus)
+        self.simLoop(self.processes, self.num_cpus,self.num_ios)
     
     def getProcesses(self):
         """
@@ -382,7 +382,7 @@ class Simulator:
                 
         return self.processes       
 
-    def simLoop(self, processes, num_cpus): 
+    def simLoop(self, processes, num_cpus, num_ios): 
         """ 
         SIMULATION LOOP
         This method runs the Schedular Simulation

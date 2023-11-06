@@ -666,6 +666,7 @@ class Simulator:
             clock=self.clock.currentTime()
             # Update the table contents
             os.system('cls' if os.name == 'nt' else 'clear')
+            #function call here for Stats.runningTable
             print(f'[bold][green]Process Progress Table[/bold][/green]')
             table.clear_rows()
             table.align['PID'] = 'l'

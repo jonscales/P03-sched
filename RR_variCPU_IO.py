@@ -10,6 +10,8 @@ import time
 from prettytable import PrettyTable
 import csv
 import shutil
+from colorama import Fore, Style, init
+
 # class Queue:
 #     def __init__(self,pcb):
 #         self.queue = []
@@ -83,7 +85,7 @@ class PCB:
         self.currIoBurst =iobursts[0]
         self.waitTime =0
         self.readyTime = 0
-        self.sliceTimer =0
+        self.sliceTimer = 0
         self.initCPUTime =0
         self.initIOTime =0
         self.cpuTime = self.getTotCpuTime()
@@ -186,13 +188,15 @@ class PCB:
         """
         returns the ratio of CPU to IO times
         """
-        return round((self.cpuTime/self.ioTime),2)
+        if self.ioTime!=0:
+            return round((self.cpuTime/self.ioTime),2)
     
     def run_idleRatio(self):
         """
         returns the ratio of run (CPU + IO ) time to wait (ready) time
         """
-        return round((self.cpuTime + self.ioTime)/(self.readyTime +self.waitTime),2)
+        if (self.readyTime+self.waitTime)!=0:
+            return round((self.cpuTime + self.ioTime)/(self.readyTime + self.waitTime),2)
 
     def __str__(self):
         """
@@ -240,15 +244,17 @@ class Stats:
     through the schedular.  It will also output this information as a .csv file
     for use in other applications. 
     """    
-    def __init__(self, processes,  clock, simType='None'):
+    def __init__(self, simulator):
         """
         Stats initialization
         """
-        self.processes = processes
-        self.symType =simType
-        self.clock = clock
-        self.statTable(clock)
-        self.statFileWriter(clock, simType)
+        self.simulator = simulator
+        self.processes = simulator.processes
+        self.symType =simulator.simType
+        self.clock = simulator.clock
+        # self.runningTable(simulator.clock)
+        # self.statTable(simulator.clock)
+        # self.statFileWriter(simulator.clock, simulator.simType)
     
     def statTable(self,clock):
         """
@@ -256,16 +262,18 @@ class Stats:
         generates & displays a table with various stats from each PCB
         """
         #Color info
-        R = "\033[0;31;40m" #RED
-        G = "\033[0;32;40m" # GREEN
-        Y = "\033[0;33;40m" # Yellow
-        B = "\033[0;34;40m" # Blue
+        R = "\033[91m" #RED
+        G = "\033[92" # GREEN
+        Y = "\033[93m" # Yellow
+        B = "\033[94m" # Blue
         P = '\033[95m' # Purple
         C = '\033[96m' #cyan
         DC= '\033[36m' # dark cyan
+        M = '\033[95m' # magenta
         BLD = '\033[1m' # bold
         U = '\033[4m' # underline
-        N = "\033[0m" # Reset
+        N = "\033[0m" # Reset 
+        
         titleTable = PrettyTable()
         titleTable.field_names = ['Process Statistics Table']
         titleTable.align['Process Statistics Table'] ='c'
@@ -281,7 +289,67 @@ class Stats:
                                      pcb.run_idleRatio()])
         print(titleTable)
         print(statTable)
+   
+    def runningTable(self,clock):
+        # Create a table for displaying the queue contents
+        New = self.simulator.getNew()
+        Ready = self.simulator.getReady()
+        Cpu = self.simulator.getCPU()
+        Wait = self.simulator.getWait()
+        Io = self.simulator.getIO()
+        Finished = self.simulator.getFinished()
+        
+        #Color info
+        R = "\033[91m" #RED
+        G = "\033[92" # GREEN
+        Y = "\033[93m" # Yellow
+        B = "\033[94m" # Blue
+        P = '\033[95m' # Purple
+        C = '\033[96m' #cyan
+        DC= '\033[36m' # dark cyan
+        M = '\033[95m' # magenta
+        BLD = '\033[1m' # bold
+        U = '\033[4m' # underline
+        N = "\033[0m" # Reset
+
+        def formattedNew(pcb):
+            fNew = f'{B}{pcb.pid}{N}'
+            return fNew
+        def formattedReady(pcb):
+            fReady = f'{B}{pcb.pid}{N} : {R}{pcb.priority}{N} : {M}{pcb.readyTime}{N}' 
+            return fReady
+        def formattedWait(pcb):
+            fWait = f'{B}{pcb.pid}{N} : {R}{pcb.priority}{N} : {M}{pcb.waitTime}{N}'
+            return fWait
+        def formattedCPU(pcb):
+            fCPU = f'{B}{pcb.pid}{N} : {R}{pcb.priority}{N} : {G}{pcb.remainingCPUTime}{N}'
+            return fCPU
+        def formattedIO(pcb):
+            fIO = f'{B}{pcb.pid}{N} : {R}{pcb.priority}{N} : {G}{pcb.remainingIOTime}{N}'
+            return fIO
+        def formattedFinished(pcb):
+            fFinished = f'{B}{pcb.pid}{N}'
+            return fFinished
+
+        runningTable = PrettyTable()
+        terminal_width = shutil.get_terminal_size().columns
+        runningTable.max_width = int(.9 * terminal_width)
     
+        runningTable.field_names = [f"{DC}Clk{N}", f"{Y}Q{N}", f"{B}PID{N} {R}Priority{N} {G}Burst Time{N}/{M}Idle Time{N}"]
+        runningTable.align = 'l'
+        
+        
+        runningTable.clear_rows()
+        runningTable.align['PID'] = 'l'
+        runningTable.add_row(["","N", [formattedNew(pcb) for pcb in New]])
+        runningTable.add_row(["","R", [formattedReady(pcb) for pcb in Ready]])
+        runningTable.add_row([clock,"C", [formattedCPU(pcb) for pcb in Cpu]])
+        runningTable.add_row(["","W",[formattedWait(pcb) for pcb in Wait]])
+        runningTable.add_row(["","I", [formattedIO(pcb) for pcb in Io]])
+        runningTable.add_row(["","F", [formattedFinished(pcb) for pcb in Finished]])
+        return runningTable    
+
+
     def statFileWriter(self, clock, simType='none'):
         """
         """ 
@@ -345,8 +413,25 @@ class Simulator:
         self.IOQueue = []
         self.waitQueue = []
         self.finishedQueue =[]
+        self.simType='None'
         self.clock = SysClock()   
-        self.simLoop(self.processes, self.num_cpus)
+        
+        self.simLoop(self.processes, self.num_cpus,self.num_ios)
+    """
+    getter methods for queues for stats class
+    """
+    def getNew(self):
+        return self.newQueue
+    def getReady(self):
+        return self.readyQueue
+    def getCPU(self):
+        return self.CPUQueue
+    def getWait(self):
+        return self.waitQueue
+    def getIO(self):
+        return self.IOQueue
+    def getFinished(self):
+        return self.finishedQueue
     
     def getProcesses(self):
         """
@@ -391,19 +476,19 @@ class Simulator:
                 
         return self.processes       
 
-    def simLoop(self, processes, num_cpus): 
+    def simLoop(self, processes, num_cpus, num_ios): 
         """ 
         SIMULATION LOOP
         This method runs the Schedular Simulation
         """
-        # Create a table for displaying the queue contents
-        table = PrettyTable()
-        terminal_width = shutil.get_terminal_size().columns
-        table.max_width = int(.9 * terminal_width)
+        # Create a table for displaying the queue contents - Moved to stats.runningTable method
+        # table = PrettyTable()
+        # terminal_width = shutil.get_terminal_size().columns
+        # table.max_width = int(.9 * terminal_width)
     
-        table.field_names = ["Clk", "Q", "PID, Priority , Burst"]
-        table.align = 'l'
-    
+        # table.field_names = ["Clk", "Q", "PID, Priority , Burst"]
+        # table.align = 'l'
+        stats =Stats(self)
         complete = False
         loopIteration = 0
         
@@ -623,20 +708,22 @@ class Simulator:
         #             print(f'{process_key} status: CPU:{pcb_instance.cpubursts}; IO:{pcb_instance.iobursts}; {pcb_instance.currBurstIs} : {pcb_instance.state}')
             clock=self.clock.currentTime()
             # Update the table contents
-            os.system('cls' if os.name == 'nt' else 'clear')
+            #os.system('cls' if os.name == 'nt' else 'clear')
+            
             print(f'[bold][green]Process Progress Table[/bold][/green]')
-            table.clear_rows()
-            table.align['PID'] = 'l'
-            table.add_row(["","N", [pcb.pid for pcb in self.newQueue]])
-            table.add_row(["","R", [(pcb.pid,pcb.priority, "RT:",pcb.readyTime) for pcb in self.readyQueue]])
-            table.add_row([clock,"C", [(pcb.pid,pcb.priority,"CPU:", pcb.remainingCPUTime) for pcb in self.CPUQueue]])
-            table.add_row(["","W",[(pcb.pid,pcb.priority,"WT:",pcb.waitTime) for pcb in self.waitQueue]])
-            table.add_row(["","I", [(pcb.pid,pcb.priority, "IO:",pcb.remainingIOTime) for pcb in self.IOQueue]])
-            table.add_row(["","F", [pcb.pid for pcb in self.finishedQueue]])
+            #function call here for Stats.runningTable
+            # table.clear_rows()
+            # table.align['PID'] = 'l'
+            # table.add_row(["","N", [pcb.pid for pcb in self.newQueue]])
+            # table.add_row(["","R", [(pcb.pid,pcb.priority, "RT:",pcb.readyTime) for pcb in self.readyQueue]])
+            # table.add_row([clock,"C", [(pcb.pid,pcb.priority,"CPU:", pcb.remainingCPUTime) for pcb in self.CPUQueue]])
+            # table.add_row(["","W",[(pcb.pid,pcb.priority,"WT:",pcb.waitTime) for pcb in self.waitQueue]])
+            # table.add_row(["","I", [(pcb.pid,pcb.priority, "IO:",pcb.remainingIOTime) for pcb in self.IOQueue]])
+            # table.add_row(["","F", [pcb.pid for pcb in self.finishedQueue]])
             
 
             # Print the table
-            print(table)
+            print(stats.runningTable(clock))
             # input("press enter")
             # continue
 
@@ -647,7 +734,8 @@ class Simulator:
 
 if __name__=='__main__':
     sim = Simulator("small.dat",'2','2','4')
-    stats=Stats(sim.getProcesses(),sim.clock)
+    
+   
    
    
     
