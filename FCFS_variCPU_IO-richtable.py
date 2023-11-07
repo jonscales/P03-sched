@@ -296,8 +296,6 @@ class Simulator:
         self.clock = SysClock()   
         #self.console = Console()
         self.simLoop(self.processes, self.num_cpus,self.num_ios,self.sleepTime)
-    
-    
    
     def getProcesses(self):
         """
@@ -347,13 +345,7 @@ class Simulator:
         SIMULATION LOOP
         This method runs the Schedular Simulation
         """
-        # Create a table for displaying the queue contents
-        table = PrettyTable()
-        terminal_width = shutil.get_terminal_size().columns
-        table.max_width = int(.9 * terminal_width)
-        table.field_names = ["Clock", "Queue", "PID, Priority, Burst Time / Idle Time"]
-        table.align = 'l'
-    
+            
         complete = False
         loopIteration = 0
         
@@ -486,32 +478,15 @@ class Simulator:
                 
             time.sleep(.5)
             loopIteration += 1
-            self.clock.advanceClock(1)
-           
-        #    # print the processes
-        #     for process_key, process_value in processes.items():
-        #         for pcb_instance in process_value: 
-        #             print(f'{process_key} status: CPU:{pcb_instance.cpubursts}; IO:{pcb_instance.iobursts}; {pcb_instance.currBurstIs} : {pcb_instance.state}')
             clock=self.clock.currentTime()
-            # Update the table contents
-            # os.system('cls' if os.name == 'nt' else 'clear')
-            # print(f'[bold][green]Process Progress Table[/bold][/green]')
-            # table.clear_rows()
-            # table.align['PID'] = 'l'
-            # table.add_row(["","New", [pcb.pid for pcb in self.newQueue]])
-            # table.add_row(["","Ready", [(pcb.pid, pcb.priority) for pcb in self.readyQueue]])
-            # table.add_row([clock,"CPU", [(pcb.pid, pcb.priority, pcb.remainingCPUTime) for pcb in self.CPUQueue]])
-            # table.add_row(["","Wait",[(pcb.pid, pcb.priority) for pcb in self.waitQueue]])
-            # table.add_row(["","IO", [(pcb.pid, pcb.priority, pcb.remainingIOTime) for pcb in self.IOQueue]])
-            # table.add_row(["","Finished", [pcb.pid for pcb in self.finishedQueue]])
             
-
-            # # Print the table
-            #print(table)
-            with Live(self.generateTable(), refresh_per_second=4) as live:
+            os.system('cls' if os.name == 'nt' else 'clear')
+            with Live(self.generateTable(clock), refresh_per_second=4) as live:
                 for _ in range(40):
-                    time.sleep(0.4)
-                    live.update(self.generateTable())
+                    time.sleep(0.04)
+                    live.update(self.generateTable(clock))
+            
+            self.clock.advanceClock(1)
 
         print(f'\n[bold][red] All processes have terminated[/red][/bold]\n')
    
@@ -521,10 +496,10 @@ class Simulator:
         builds a row with 2 columns. The queue name on the left, and a random number of processes on the right.
         """
         jobs =''
+        qClock=self.clock.currentTime()
         if queue=='New'and self.newQueue:
             for pcb in self.newQueue:
                 jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red][bold]][/bold]")
-                print(f'{jobs}')
                 return [jobs]
         elif queue=='Ready' and self.readyQueue:
             for pcb in self.readyQueue:
@@ -547,24 +522,25 @@ class Simulator:
                 jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue][bold]][/bold]")
                 return [jobs] 
         else:
-            return (f'Not a valid queue')
+            return ['']
                
-    def generateTable(self) -> Table:
+    def generateTable(self,clock) -> Table:
         """ 
             - returns a `rich` table that displays all the queue contents.
             - `make_row` returns a list with one entry per column, we need to expand it. 
             - You will probably have to pass in your queues or put this in a class to generate your own table .... or don't. 
         """  
         # Create the table
+        qClock=str({self.clock.currentTime()})
         table = Table(show_header=False)
-        table.add_column("Clock", style="bold yellow on blue dim", width=int(terminal_width*.1))
-        table.add_column("Queue", style="bold yellow", width=int(terminal_width*.1))
+        table.add_column("Clock", style="bold blue", width=int(terminal_width*.05))
+        table.add_column("Queue", style="bold cyan", width=int(terminal_width*.05))
         #headerColumn2 = "[bold blue]Process[/bold blue] [bold red]Priority[/bold red] [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]'"
-        table.add_column(f'[bold blue]Process[/bold blue] [bold red]Priority[/bold red] [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]', width=int(terminal_width*.8))
+        table.add_column(f'[bold blue]Process[/bold blue] [bold red]Priority[/bold red] [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]', width=int(terminal_width*.9))
         
         table.add_row('','New',*self.make_row("New"), end_section=True)
         table.add_row('','Ready',*self.make_row("Ready"), end_section=True)
-        table.add_row('{self.clock}','CPU',*self.make_row("CPU"), end_section=True)
+        table.add_row(qClock,'CPU',*self.make_row("CPU"), end_section=True)
         table.add_row('','Wait',*self.make_row("Wait"), end_section=True)
         table.add_row('','IO',*self.make_row("IO"), end_section=True)
         table.add_row('','Done',*self.make_row("Finished"), end_section=True)
