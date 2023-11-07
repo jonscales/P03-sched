@@ -405,7 +405,7 @@ class Simulator:
       read in the data from a file
       run the simulation loop
     """
-    def __init__(self,datfile, num_cpus,num_ios, ts):
+    def __init__(self,datfile, num_cpus,num_ios, ts,):
         """
         Simulator initialization
         """
@@ -711,7 +711,8 @@ class Simulator:
 
 
 if __name__=='__main__':
-    sim = Simulator("small.dat",'2','2','4')
+    # Simulator("data filename", num CPUs, num IO, Time Slice, Run Speed)
+    sim = Simulator("small.dat",1, 1, 3, 0.5 )
     stats=Stats(sim.getProcesses(),sim.clock, sim.num_cpus, sim.num_ios, sim.timeSlice)
    
    

@@ -10,58 +10,12 @@ import time
 from prettytable import PrettyTable
 import csv
 import shutil
-from colorama import Fore, Style, init
-init(autoreset=True)
-# class Queue:
-#     def __init__(self,pcb):
-#         self.queue = []
-
-#     def __str__(self):
-#         return ",".join(self.queue)
-
-#     def addPCB(self,pcb):
-#         self.queue.append(pcb)
-    
-#     def removePCB(self,pcb):
-#         item = self.queue[0]
-#         del self.queue[0]
-#         return item
-
-#     def decrement(self):
-#         """ Iterate over the self.queue and decrement or call whatever
-#             method for each of the pcb's in this queue
-#         """
-#         # for each process in queue
-#         #    call decrementIoBurst
-#         pass
-    
-#     def incrememnt(self,what='waittime'):
-#         """ Iterate over the self.queue and decrement or call whatever
-#             method for each of the pcb's in this queue
-#         """
-#         # for each process in queue
-#         #    call incrementwaittime
-#         if what =='waittime':
-#             pass
-#         elif what == 'runtime':
-#             pass
-#         pass 
-    
-# class CPU:
-    # def __init__(self,pcb):
-    #     self.busy = False
-    #     self.runningPCB = None
-
-    # def decrementCurrentProcess(self):
-    #     self.runningPCB.decrementCpuBurst()
-    
-    # def loadProcess(self,pcb):
-    #     self.runningPCB = pcb
-
-    # def testKickOff(self):
-    #     if self.runningPCB.getCurrentBurstTime() == 0:
-    #         pass
-    #         # kick it off the cpu
+from rich.table import Table
+from rich.live import Live
+from rich.progress import SpinnerColumn
+from rich.console import Console
+console = Console()
+terminal_width = console.width
 
 class PCB:
     """
@@ -85,24 +39,15 @@ class PCB:
         self.currIoBurst =iobursts[0]
         self.waitTime =0
         self.readyTime = 0
-        self.sliceTimer = 0
         self.initCPUTime =0
         self.initIOTime =0
         self.cpuTime = self.getTotCpuTime()
         self.ioTime = self.getTotIoTime()
         self.numCpuBursts =len(cpubursts)
         self.numIoBursts =len(iobursts)
-        self.remainingCPUTime = int(cpubursts[0])
-        self.remainingIOTime = int(iobursts[0])
+        self.remainingCPUTime = 0
+        self.remainingIOTime =0
    
-    def getSliceTimer(self):
-        return self.sliceTimer
-    def incrementSliceTimer(self):
-        self.sliceTimer +=1
-        
-    def resetSliceTimer(self):
-        self.sliceTimer = 0
-    
     def incrementReadyTime(self):
         """
         increments the readyTime variable.  
@@ -188,15 +133,13 @@ class PCB:
         """
         returns the ratio of CPU to IO times
         """
-        if self.ioTime!=0:
-            return round((self.cpuTime/self.ioTime),2)
+        return round((self.cpuTime/self.ioTime),2)
     
     def run_idleRatio(self):
         """
         returns the ratio of run (CPU + IO ) time to wait (ready) time
         """
-        if (self.readyTime+self.waitTime)!=0:
-            return round((self.cpuTime + self.ioTime)/(self.readyTime + self.waitTime),2)
+        return round((self.cpuTime + self.ioTime)/(self.readyTime +self.waitTime),2)
 
     def __str__(self):
         """
@@ -244,14 +187,13 @@ class Stats:
     through the schedular.  It will also output this information as a .csv file
     for use in other applications. 
     """    
-    def __init__(self, processes,  clock, simType='None' ):
+    def __init__(self, processes,  clock, simType='None'):
         """
         Stats initialization
         """
-        self.processes =processes
+        self.processes = processes
         self.symType =simType
         self.clock = clock
-        
         self.statTable(clock)
         self.statFileWriter(clock, simType)
     
@@ -261,18 +203,16 @@ class Stats:
         generates & displays a table with various stats from each PCB
         """
         #Color info
-        R = "\033[91m" #RED
-        G = "\033[92" # GREEN
-        Y = "\033[93m" # Yellow
-        B = "\033[94m" # Blue
+        R = "\033[0;31;40m" #RED
+        G = "\033[0;32;40m" # GREEN
+        Y = "\033[0;33;40m" # Yellow
+        B = "\033[0;34;40m" # Blue
         P = '\033[95m' # Purple
         C = '\033[96m' #cyan
         DC= '\033[36m' # dark cyan
-        M = '\033[95m' # magenta
         BLD = '\033[1m' # bold
         U = '\033[4m' # underline
-        N = "\033[0m" # Reset 
-        
+        N = "\033[0m" # Reset
         titleTable = PrettyTable()
         titleTable.field_names = ['Process Statistics Table']
         titleTable.align['Process Statistics Table'] ='c'
@@ -288,11 +228,7 @@ class Stats:
                                      pcb.run_idleRatio()])
         print(titleTable)
         print(statTable)
-   
-    # def runningTable(self,clock):
-          
-
-
+    
     def statFileWriter(self, clock, simType='none'):
         """
         """ 
@@ -357,25 +293,8 @@ class Simulator:
         self.IOQueue = []
         self.waitQueue = []
         self.finishedQueue =[]
-        self.simType='None'
         self.clock = SysClock()   
-        
-        self.simLoop(self.processes, self.num_cpus,self.num_ios,self.sleepTime)
-    """
-    getter methods for queues for stats class
-    """
-    def getNew(self):
-        return self.newQueue
-    def getReady(self):
-        return self.readyQueue
-    def getCPU(self):
-        return self.CPUQueue
-    def getWait(self):
-        return self.waitQueue
-    def getIO(self):
-        return self.IOQueue
-    def getFinished(self):
-        return self.finishedQueue
+        self.simLoop(self.processes, self.num_cpus,self.num_ios)
     
     def getProcesses(self):
         """
@@ -420,20 +339,18 @@ class Simulator:
                 
         return self.processes       
 
-    def simLoop(self, processes, num_cpus, num_ios, sleepTime): 
+    def simLoop(self, processes, num_cpus, num_ios): 
         """ 
         SIMULATION LOOP
         This method runs the Schedular Simulation
         """
-        # Create a table for displaying the queue contents - Moved to stats.runningTable method
+        # Create a table for displaying the queue contents
         table = PrettyTable()
         terminal_width = shutil.get_terminal_size().columns
         table.max_width = int(.9 * terminal_width)
+        table.field_names = ["Clock", "Queue", "PID"]
+        table.align = 'c'
     
-        table.field_names = ["Clk", "Q", "PID, Priority , Burst"]
-        table.align = 'l'
-        
-        
         complete = False
         loopIteration = 0
         
@@ -442,24 +359,24 @@ class Simulator:
         
         # 1. increment times for readyQueue & waitQueue PCBs
             if self.readyQueue:
-                for pcb in self.readyQueue:
-                    pcb.changeState('Ready')
-                    pcb.incrementReadyTime() 
+                for process in self.readyQueue:
+                    process.changeState('Ready')
+                    process.incrementReadyTime() 
             else:
                 pass
             
             if self.waitQueue:
-                for pcb in self.waitQueue:
-                    pcb.changeState('Wait')
-                    pcb.incrementWaitTime() 
+                for process in self.waitQueue:
+                    process.changeState('Wait')
+                    process.incrementWaitTime() 
             else:
                 pass       
 
         #2. move anything in new to ready
             if self.newQueue:
                 self.readyQueue.extend(self.newQueue)
-                for pcb in self.readyQueue:
-                    pcb.changeState('Ready')
+                for process in self.readyQueue:
+                    process.changeState('Ready')
                 self.newQueue.clear()
            
         # 3. check for new processes if pcb arrival time == time, add pcb to new
@@ -472,76 +389,49 @@ class Simulator:
                 #print(f'new queue is currently empty')
                 pass 
         
-        # 4. decrement current CPU and IO processes bursts values, incement slice time
+        # 4. decrement current CPU and IO processes bursts values
             if self.CPUQueue:
                 for pcb in self.CPUQueue:
                     if pcb.cpubursts:
-                        pcb.cpubursts[0] -= 1
-                        pcb.remainingCPUTime = pcb.cpubursts[0]
-                        pcb.incrementSliceTimer()
+                       pcb.cpubursts[0] -= 1
+                       pcb.remainingCPUTime = pcb.cpubursts[0]
                     else:
                         pass
-            else:
-                pass
-
+            
             if self.IOQueue:
                 for pcb in self.IOQueue:
-                    if pcb.iobursts:
-                        pcb.iobursts[0] -=1
-                        pcb.remainingIOTime = pcb.iobursts[0] 
-                    else:
-                        pass
+                    pcb.iobursts[0] -=1
+                    pcb.remainingIOTime = pcb.iobursts[0] 
             else:    
                 pass              
 
         # 5. check if process in CPU 
             if self.CPUQueue:                                #is process in the CPU
                 for pcb in self.CPUQueue: 
-                    if pcb.cpubursts and pcb.cpubursts[0] == 0:                #is process in CPU finished?
+                    if pcb.cpubursts[0] == 0:                #is process in CPU finished?
                         if len(pcb.cpubursts) <= 1:          # was this last CPU bursts for process?
-                            print(f'PCB {pcb.pid} DONE')
                             pcb.changeState('Finished')
                             self.finishedQueue.append(pcb)   # move process to finished queue
                             pcb.cpubursts.pop(0)             # remove finished burst from cpu bursts list
                         else:                                   # not last CPU bursts so move to IO
-                            print(f'PCB {pcb.pid} CPU burst finished, moved to Wait')
                             self.waitQueue.append(pcb)        # move completed process to IO
                             pcb.changeState('Wait')
                             if pcb.cpubursts:               
                                 pcb.cpubursts.pop(0) 
-                # timer check
-                for pcb in self.CPUQueue:                    # is slice time expired
-                    if pcb.cpubursts: 
-                        if pcb.cpubursts[0] !=0:
-                            if pcb.sliceTimer == self.timeSlice:  # has pcb been in cpu for the time slice length
-                                print(f'PCB {pcb.pid} has timed out of CPU & moved to ready')
-                                self.readyQueue.append(pcb)        # move pcb to ready queue
-                                pcb.changeState("Ready")
-                                pcb.resetSliceTimer()               # reset the timer for the next cpu burst
-                        else:
-                            if len(pcb.cpubursts) <= 1:          # was this last CPU bursts for process?
-                                pcb.changeState('Finished')
-                                self.finishedQueue.append(pcb)   # move process to finished queue
-                                pcb.cpubursts.pop(0)             # remove finished burst from cpu bursts list
-                            else:                                   # not last CPU bursts so move to IO
-                                self.waitQueue.append(pcb)        # move completed process to IO
-                                pcb.changeState('Wait')
-                                if pcb.cpubursts:               
-                                    pcb.cpubursts.pop(0) 
-
+                
                 self.CPUQueue = [pcb for pcb in self.CPUQueue if pcb.state=='CPU']  # update CPU 
                 
                 if self.readyQueue and (not self.CPUQueue or len(self.CPUQueue) < self.num_cpus): # are processes in readyqueue & is CPU not full
-                    num_to_assign = min(self.num_cpus - len(self.CPUQueue), len(self.readyQueue))
+                    num_to_assign =min(self.num_cpus -len(self.CPUQueue), len(self.readyQueue))
                     next_processes = self.readyQueue[:num_to_assign] # get # of process from ready queue needed to fill CPU
                     self.CPUQueue.extend(next_processes)  # move next processes to the CPU 
-                    for pcb in next_processes:
-                        pcb.changeState('CPU')
+                    for process in next_processes:
+                        process.changeState('CPU')
                     self.readyQueue = self.readyQueue[num_to_assign:] 
                 elif self.CPUQueue and self.IOQueue and not self.readyQueue: # if ready is empty, but IO still has processes continue
                     pass
                 else:
-                    if loopIteration > 1 and not self.readyQueue and not self.IOQueue and not self.CPUQueue and not self.waitQueue:
+                    if loopIteration > 1 and not self.readyQueue and not self.IOQueue and not self.CPUQueue:
                         complete=True        
                     else: # running process has remaining CPU time, keep PCB in CPU,
                         pass   
@@ -550,97 +440,45 @@ class Simulator:
                     num_to_assign = min(num_cpus -len(self.CPUQueue), len(self.readyQueue))
                     next_processes = self.readyQueue[:num_to_assign] # get # of process from ready queue needed to fill CPU
                     self.CPUQueue.extend(next_processes)  # move next processes to the CPU 
-                    for pcb in next_processes:
-                        pcb.changeState('CPU')
+                    for process in next_processes:
+                        process.changeState('CPU')
                     self.readyQueue = self.readyQueue[num_to_assign:] 
                 elif not self.readyQueue and self.IOQueue: # if ready is empty, but IO still has processes continue
                     pass
                 else:
-                    if loopIteration > 1 and not self.CPUQueue and not self.readyQueue and not self.IOQueue and not self.waitQueue:
+                    if loopIteration > 1 and not self.CPUQueue and not self.readyQueue and not self.IOQueue:
                         complete=True                      
         
         # 6. check if any PCBs' in IO have current IO burst value == 0,  
             if self.IOQueue:
-                next_IOprocesses =[] #container for next processes 
-                
                 # make  temp list of complete processes
-                completeIOprocesses = [pcb for pcb in self.IOQueue if pcb.iobursts[0] == 0]
+                completeIOprocesses =[process for process in self.IOQueue if process.iobursts[0] == 0]
                     
                 # update IO queue with only incomplete processes
-                self.IOQueue = [pcb for pcb in self.IOQueue if pcb.iobursts[0] != 0]
-                for pcb in self.IOQueue: # just to print the IO burst remaining time
-                    pcb.remainingTime = pcb.iobursts[0]
+                self.IOQueue = [process for process in self.IOQueue if process.iobursts[0] != 0]
+                for process in self.IOQueue: # jsut to print the still running processes in IO
+                    process.remainingTime = process.iobursts[0]
                 
-                # add the IO complete process back to ready queue
-                for pcb in completeIOprocesses:
-                    pcb.changeState('Ready')
+                # add the IO complete process to ready queue
+                for process in completeIOprocesses:
+                    process.changeState('Ready')
                 self.readyQueue.extend(completeIOprocesses)
-                self.readyQueue = [pcb for pcb in self.readyQueue if pcb.state =='Ready']  # update ready
-                self.readyQueue = sorted(self.readyQueue, key=lambda pcb: (pcb.priority),reverse=True) # resort ready queue
-                self.IOQueue = [pcb for pcb in self.IOQueue if pcb.state =='IO']  # update IO 
+                
                 # remove the io burst from the iobursts list in PCB
-                for pcb in completeIOprocesses:
-                    if pcb.iobursts[0] == 0:
-                       pcb.iobursts.pop(0)
+                for process in completeIOprocesses:
+                    if process.iobursts[0]==0:
+                       process.iobursts.pop(0)
                 # clear the temp complete IO processes list
                 completeIOprocesses.clear()  
-               
-                #Add processes to IO if IO already exists
-                if self.waitQueue and (not self.IOQueue or len(self.IOQueue) < self.num_ios): # are processes in waitqueue & is IO not full
-                    num_to_assignIO = min(self.num_ios - len(self.IOQueue), len(self.waitQueue)) # get # of process from wait queue needed to fill IO
-                    potentialIOprocesses = self.waitQueue[:num_to_assignIO] 
-                    for pcb in potentialIOprocesses:
-                        print(f'Potential next IO processes')
-                        print(f'PID {pcb.pid}')
-                        if pcb.waitTime >=1:
-                            next_IOprocesses.append(pcb) # move next processes to the IO if they have been in wait 1 tick
-                            pcb.changeState('IO')
-                    
-                    if next_IOprocesses:
-                        for pcb in next_IOprocesses:
-                            print(f'Actual next processes are')
-                            print(f'PID {pcb.pid}')
-                            pcb.changeState('IO') 
-                        self.IOQueue.extend(next_IOprocesses)
-                        next_IOprocesses.clear()
-                       
-                    self.waitQueue = self.waitQueue[num_to_assignIO:] # update wait
-                    self.waitQueue =[pcb for pcb in self.waitQueue if pcb.state == 'Wait']
-                    potentialIOprocesses = [pcb for pcb in potentialIOprocesses if pcb.state == 'Wait'] # keep processes not moved to IO
-                    self.waitQueue.extend(potentialIOprocesses) # add  processes back that had not been in wait >=1 tick  
-                    self.IOQueue = [pcb for pcb in self.IOQueue if pcb.state =='IO']  # update IO 
-                    potentialIOprocesses.clear()
-                    next_IOprocesses.clear()              
-            else: # add processes to IO if IO currently empty
-                next_IOprocesses =[]
-                if self.waitQueue and (not self.IOQueue or len(self.IOQueue) < self.num_ios): # are processes in waitqueue & is IO empty or not full
-                    num_to_assignIO = min(self.num_ios - len(self.IOQueue), len(self.waitQueue))# get # of process from wait queue needed to fill IO
-                    potentialIOprocesses = self.waitQueue[:num_to_assignIO] #get processes that could be moved to io
-                    for pcb in potentialIOprocesses:
-                        print(f'Potential next IO processes')
-                        print(f'PID {pcb.pid}')
-                        if pcb.waitTime >=1:
-                            next_IOprocesses.append(pcb) # actual next processes are those that have been in ready >1 tick
-                            pcb.changeState('IO') 
-                    
-                    if next_IOprocesses:
-                        for pcb in next_IOprocesses:
-                            print(f'Actual next processes are')
-                            print(f'PID {pcb.pid}')
-                           
-                        self.IOQueue.extend(next_IOprocesses)  # move next processes to the IO 
-                        next_IOprocesses.clear()
-                
-                    self.waitQueue = self.waitQueue[num_to_assignIO:] #update the wait queue
-                    self.waitQueue =[pcb for pcb in self.waitQueue if pcb.state == 'Wait']
-                    potentialIOprocesses = [pcb for pcb in potentialIOprocesses if pcb.state == 'Wait'] # keeps pcb not moved to IO
-                    self.waitQueue.extend(potentialIOprocesses)
-                    self.IOQueue = [pcb for pcb in self.IOQueue if pcb.state == 'IO']  # update IO   self.waitQueue.extend(potentialIOprocesses) # add those processes back that had not been in wait >=1 tick 
-                    potentialIOprocesses.clear()
-                    next_IOprocesses.clear()
-                     
-                else:
-                    pass
+            
+            if self.waitQueue and (not self.IOQueue or len(self.IOQueue) < self.num_ios): # are processes in waitqueue & is IO not full
+                num_to_assign =min(self.num_ios -len(self.IOQueue), len(self.waitQueue))
+                next_processes = self.waitQueue[:num_to_assign] # get # of process from wait queue needed to fill IO
+                self.IOQueue.extend(next_processes)  # move next processes to the IO 
+                for process in next_processes:
+                    process.changeState('IO')
+                self.waitQueue = self.waitQueue[num_to_assign:] 
+            
 
                 
             time.sleep(self.sleepTime)
@@ -653,35 +491,81 @@ class Simulator:
         #             print(f'{process_key} status: CPU:{pcb_instance.cpubursts}; IO:{pcb_instance.iobursts}; {pcb_instance.currBurstIs} : {pcb_instance.state}')
             clock=self.clock.currentTime()
             # Update the table contents
-            os.system('cls' if os.name == 'nt' else 'clear')
-            
-            print(f'[bold][green]Process Progress Table[/bold][/green]')
-            #function call here for Stats.runningTable
-            table.clear_rows()
-            table.align['PID'] = 'l'
-            table.add_row(["","N", [pcb.pid for pcb in self.newQueue]])
-            table.add_row(["","R", [(pcb.pid,pcb.priority, "RT:",pcb.readyTime) for pcb in self.readyQueue]])
-            table.add_row([clock,"C", [(pcb.pid,pcb.priority,"CPU:", pcb.remainingCPUTime) for pcb in self.CPUQueue]])
-            table.add_row(["","W",[(pcb.pid,pcb.priority,"WT:",pcb.waitTime) for pcb in self.waitQueue]])
-            table.add_row(["","I", [(pcb.pid,pcb.priority, "IO:",pcb.remainingIOTime) for pcb in self.IOQueue]])
-            table.add_row(["","F", [pcb.pid for pcb in self.finishedQueue]])
+            #os.system('cls' if os.name == 'nt' else 'clear')
+            # print(f'[bold][green]Process Progress Table[/bold][/green]')
+            # table.clear_rows()
+            # table.align['PID'] = 'l'
+            # table.add_row(["","New", [pcb.pid for pcb in self.newQueue]])
+            # table.add_row(["","Ready", [(pcb.pid, pcb.priority) for pcb in self.readyQueue]])
+            # table.add_row([clock,"CPU", [(pcb.pid, pcb.priority, pcb.remainingCPUTime) for pcb in self.CPUQueue]])
+            # table.add_row(["","Wait",[(pcb.pid, pcb.priority) for pcb in self.waitQueue]])
+            # table.add_row(["","IO", [(pcb.pid, pcb.priority, pcb.remainingIOTime) for pcb in self.IOQueue]])
+            # table.add_row(["","Finished", [pcb.pid for pcb in self.finishedQueue]])
             
 
-            # Print the table
-            print(table)
-            # input("press enter")
-            # continue
+            # # Print the table
+            # print(table)
+            self.generateTable()
 
         print(f'\n[bold][red] All processes have terminated[/red][/bold]\n')
-        
+    # Methods for output visualization
+    def make_row(self, queue):
+        """ 
+        builds a row with 2 columns. The queue name on the left, and a random number of processes on the right.
+        """
+        jobs =''
+        if queue=='New'and self.newQueue:
+            for pcb in self.newQueue:
+                jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red][bold]][/bold]")
+                return [queue, jobs]
+        if queue=='Ready' and self.readyQueue:
+            for pcb in self.readyQueue:
+                jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red],[magenta]{pcb.readyTime}[/magenta][bold]][/bold]" )    
+                return [queue, jobs]
+        if queue=='Wait'and self.waitQueue:
+            for pcb in self.waitQueue:
+                jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red], [magenta]{pcb.waitTime}[/magenta][bold]][/bold]" )    
+                return [queue, jobs]
+        if queue=='CPU' and self.CPUQueue:
+            for pcb in self.CPUQueue:
+                jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red], [green]{pcb.remainingCPUTime}[/green][bold]][/bold]" )    
+                return [queue, jobs]
+        if queue=='IO' and self.IOQueue:
+            for pcb in self.IOQueue:
+                jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red], [green]{pcb.remainingIOTime}[/green][bold]][/bold]" )    
+                return [queue, jobs]
+        if queue=='Finished'and self.finishedQueue:
+            for pcb in self.finishedQueue:
+                jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue][bold]][/bold]")
+                return [queue, jobs] 
+               
+    def generateTable(self) -> Table:
+        """ 
+            - returns a `rich` table that displays all the queue contents.
+            - `make_row` returns a list with one entry per column, we need to expand it. 
+            - You will probably have to pass in your queues or put this in a class to generate your own table .... or don't. 
+        """  
+        # Create the table
+        table = Table(show_header=False)
+        #table.add_column("Queue", style="bold yellow on blue dim", width=int(terminal_width*.1))
+        table.add_column("Queue", style="bold yellow", width=int(terminal_width*.1))
+        headerColumn2 = "[bold blue]Process[/bold blue] [bold red]Priority[/bold red] [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]'"
+        table.add_column(f'[bold blue]Process[/bold blue] [bold red]Priority[/bold red] [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]', width=int(terminal_width*.9))
+        table.add_row(self.make_row("New"), end_section=True)
+        table.add_row(self.make_row("Ready"), end_section=True)
+        table.add_row(self.make_row("CPU"), end_section=True)
+        table.add_row(self.make_row("IO"), end_section=True)
+        table.add_row(self.make_row("Finished"), end_section=True)
+        return table
 
 
 
 if __name__=='__main__':
+    #For loops here to run a set of FCFS then RR, then priority based
     # Simulator("data filename", num CPUs, num IO, Time Slice, Run Speed)
-    sim = Simulator("small.dat",2,2,4,0.5)
-    
-   
+    sim = Simulator("small.dat",1, 1, 3, 0.5 )
+    # the stats class will need the simulation type and the loop number to tie to the output file name
+    stats=Stats(sim.getProcesses(),sim.clock)
    
    
     
