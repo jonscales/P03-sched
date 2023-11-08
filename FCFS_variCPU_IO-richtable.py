@@ -276,7 +276,7 @@ class Simulator:
       read in the data from a file
       run the simulation loop
     """
-    def __init__(self,datfile, num_cpus,num_ios, ts, sleep):
+    def __init__(self, datfile, num_cpus, num_ios, ts, sleep):
         """
         Simulator initialization
         """
@@ -295,7 +295,7 @@ class Simulator:
         self.finishedQueue =[]
         self.clock = SysClock()   
         #self.console = Console()
-        self.simLoop(self.processes, self.num_cpus,self.num_ios,self.sleepTime)
+        self.simLoop(self.processes, self.num_cpus, self.num_ios, self.sleepTime)
    
     def getProcesses(self):
         """
@@ -467,23 +467,21 @@ class Simulator:
                 completeIOprocesses.clear()  
             
             if self.waitQueue and (not self.IOQueue or len(self.IOQueue) < self.num_ios): # are processes in waitqueue & is IO not full
-                num_to_assign =min(self.num_ios -len(self.IOQueue), len(self.waitQueue))
+                num_to_assign =min(self.num_ios - len(self.IOQueue), len(self.waitQueue))
                 next_processes = self.waitQueue[:num_to_assign] # get # of process from wait queue needed to fill IO
                 self.IOQueue.extend(next_processes)  # move next processes to the IO 
                 for process in next_processes:
                     process.changeState('IO')
                 self.waitQueue = self.waitQueue[num_to_assign:] 
             
-
-                
-            time.sleep(.5)
+            time.sleep(self.sleepTime)
             loopIteration += 1
             clock=self.clock.currentTime()
             
             os.system('cls' if os.name == 'nt' else 'clear')
-            with Live(self.generateTable(clock), refresh_per_second=4) as live:
-                for _ in range(40):
-                    time.sleep(0.04)
+            with Live(self.generateTable(clock), refresh_per_second=2) as live:
+                for _ in range(2):
+                    time.sleep(0)
                     live.update(self.generateTable(clock))
             
             self.clock.advanceClock(1)
@@ -495,32 +493,33 @@ class Simulator:
         """ 
         builds a row with 2 columns. The queue name on the left, and a random number of processes on the right.
         """
+     
         jobs =''
         qClock=self.clock.currentTime()
         if queue=='New'and self.newQueue:
             for pcb in self.newQueue:
                 jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red][bold]][/bold]")
-                return [jobs]
+            return [jobs]
         elif queue=='Ready' and self.readyQueue:
             for pcb in self.readyQueue:
-                jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red],[magenta]{pcb.readyTime}[/magenta][bold]][/bold]" )    
-                return [jobs]
+                jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red], [magenta]{pcb.readyTime}[/magenta][bold]][/bold]" )    
+            return [jobs]
         elif queue=='Wait'and self.waitQueue:
-            for pcb in self.waitQueue:
-                jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red], [magenta]{pcb.waitTime}[/magenta][bold]][/bold]" )    
-                return [jobs]
+            for self.pcb in self.waitQueue:
+                jobs += str(f"[bold][[/bold][bold blue]{self.pcb.pid}[/bold blue], [red]P{self.pcb.priority}[/red], [magenta]{self.pcb.waitTime}[/magenta][bold]][/bold]" )    
+            return [jobs]
         elif queue=='CPU' and self.CPUQueue:
             for pcb in self.CPUQueue:
                 jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red], [green]{pcb.remainingCPUTime}[/green][bold]][/bold]" )    
-                return [jobs]
+            return [jobs]
         elif queue=='IO' and self.IOQueue:
             for pcb in self.IOQueue:
                 jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red], [green]{pcb.remainingIOTime}[/green][bold]][/bold]" )    
-                return [jobs]
+            return [jobs]
         elif queue=='Finished'and self.finishedQueue:
             for pcb in self.finishedQueue:
                 jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue][bold]][/bold]")
-                return [jobs] 
+            return [jobs] 
         else:
             return ['']
                
@@ -531,12 +530,12 @@ class Simulator:
             - You will probably have to pass in your queues or put this in a class to generate your own table .... or don't. 
         """  
         # Create the table
-        qClock=str({self.clock.currentTime()})
-        table = Table(show_header=False)
-        table.add_column("Clock", style="bold blue", width=int(terminal_width*.05))
-        table.add_column("Queue", style="bold cyan", width=int(terminal_width*.05))
-        #headerColumn2 = "[bold blue]Process[/bold blue] [bold red]Priority[/bold red] [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]'"
-        table.add_column(f'[bold blue]Process[/bold blue] [bold red]Priority[/bold red] [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]', width=int(terminal_width*.9))
+        qClock=str(self.clock.currentTime())
+        table = Table(show_header=True)
+        table.add_column(f'[bold][yellow]Clock[/yellow][/bold]', width=int(terminal_width*.05))
+        table.add_column(f'[bold][cyan]Queue[/cyan][/bold]',  width=int(terminal_width*.05))
+        #headerColumn2 = "[bold blue]Process[/bold blue], [bold red]Priority[/bold red], [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]'"
+        table.add_column(f'[bold blue]Process[/bold blue], [bold red]Priority[/bold red], [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]', width=int(terminal_width*.9))
         
         table.add_row('','New',*self.make_row("New"), end_section=True)
         table.add_row('','Ready',*self.make_row("Ready"), end_section=True)
@@ -551,7 +550,7 @@ class Simulator:
 if __name__=='__main__':
     #For loops here to run a set of FCFS then RR, then priority based
     # Simulator("data filename", num CPUs, num IO, Time Slice, Run Speed)
-    sim = Simulator("small.dat",1, 1, 3, .5 )
+    im = Simulator("small.dat",1, 1, 3, .5)
     # the stats class will need the simulation type and the loop number to tie to the output file name
     stats=Stats(sim.getProcesses(),sim.clock)
    
