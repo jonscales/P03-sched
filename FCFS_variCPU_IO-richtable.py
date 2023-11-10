@@ -227,37 +227,37 @@ class Stats:
         #build a rich table
         # Create the table        
         sClock=str(self.clock.currentTime())
-        statTable = Table(show_header=False) # uses the add_column information to create column headings. 
-        #statTable.add_column(f'[bold][yellow]Clock[/yellow][/bold]', width=int(terminal_width*.1))
-        statTable.add_column(f'[bold][cyan]Queue[/cyan][/bold]',  width=int(terminal_width*.1))
-        statTable.add_column(f'[bold blue]Process[/bold blue], [bold red]Total Time[/bold red], [bold magenta]Ready Time[/bold magenta], [bold green]CPU Time[/bold green], [bold magenta]Wait Time[/bold magenta],[bold green]IO Time[/bold green],[bold red]CPU Util[/bold red],[bold blue]CPU/IO[/bold blue], [bold green]Run/Idle[/bold green]', width=int(terminal_width*.8))
+        sortedProcesses = sorted(self.processes.items(), key=lambda x: x[1][0].getTotalTime())
+        statTable = Table(show_header=True) # uses the add_column information to create column headings. 
+        statTable.add_column(f'[bold blue]PID[/bold blue]', width=int(terminal_width*.1),justify='center')
+        statTable.add_column(f'[bold][red]Priority[/red][/bold]',  width=int(terminal_width*.1),justify='center')
+        statTable.add_column(f'[bold][cyan]Total Time[/cyan][/bold]',  width=int(terminal_width*.1),justify='center')
+        statTable.add_column(f'[bold][magenta]Ready Time[/magenta][/bold]',  width=int(terminal_width*.1),justify='center')
+        statTable.add_column(f'[bold][green]CPU Time[/green][/bold]',  width=int(terminal_width*.1),justify='center')
+        statTable.add_column(f'[bold][magenta]Wait Time[/magenta][/bold]',  width=int(terminal_width*.1),justify='center')
+        statTable.add_column(f'[bold][green]IO Time[/green][/bold]',  width=int(terminal_width*.1),justify='center')
+        statTable.add_column(f'[bold][red]CPU Util[/red][/bold]',  width=int(terminal_width*.1),justify='center')
+        statTable.add_column(f'[bold blue]CPU/IO[/bold blue]', width=int(terminal_width*.1),justify='center')
+        statTable.add_column(f'[bold cyan]Run/Idle[/bold cyan]', width=int(terminal_width*.1),justify='center')
                              
-        
-        statTable.add_row(f'Total Processes Run Time: [bold][yellow]{sClock}[/yellow][/bold]')
-        for pid, pcb_instances in self.processes.items():
+        #statTable.add_row(f'Total Processes Run Time: [bold][yellow]{sClock}[/yellow][/bold]')
+        for pid, pcb_instances in sortedProcesses:
             for pcb in pcb_instances:
-                rowData =''
-                rowData += (f'{pcb.pid}, {pcb.getTotalTime()}, {pcb.getReadyTime()}, {pcb.getTotCpuTime()}, {pcb.getWaitTime()}, {pcb.getTotIoTime()}, {pcb.cpu_ioRatio()}, {pcb.getcpu_util()}, {pcb.run_idleRatio()}')
-                statTable.add_row(f'{rowData}')
-                
-
+                statTable.add_row(
+                    str(pcb.pid),
+                    str(pcb.priority),
+                    str(pcb.getTotalTime()),
+                    str(pcb.getReadyTime()),
+                    str(pcb.getTotCpuTime()),
+                    str(pcb.getWaitTime()),
+                    str(pcb.getTotIoTime()),
+                    str(pcb.getcpu_util()),
+                    str(pcb.cpu_ioRatio()),
+                    str(pcb.run_idleRatio())
+                    )
+            
         print(statTable)
         return statTable
-        
-        # titleTable = PrettyTable()
-        # titleTable.field_names = ['Process Statistics Table']
-        # titleTable.align['Process Statistics Table'] ='c'
-        # titleTable.min_width['Process Statistics Table'] = 82
-        # titleTable.add_row([f"Total System Clock Time : {sClock}"])
-        
-        # statTable = PrettyTable()
-        # statTable.field_names = ["PID", "Total Time", "Ready Time", "CPU Time", "Wait Time", "IO Time", "CPU Util", "CPU/IO", "Run/Idle"]
-        # for pid, pcb_instances in self.processes.items():
-        #     for pcb in pcb_instances:
-        #         statTable.add_row([pcb.pid, pcb.getTotalTime(), pcb.getReadyTime(), pcb.getTotCpuTime(), pcb.getWaitTime(),
-        #                            pcb.getTotIoTime(), pcb.cpu_ioRatio(), pcb.getcpu_util(), pcb.run_idleRatio()])
-        # print(titleTable)
-        # print(statTable)
     
     def statFileWriter(self, clock, simType='none'):
         """
@@ -496,7 +496,7 @@ class Simulator:
                        process.iobursts.pop(0)
                 # clear the temp complete IO processes list
                 completeIOprocesses.clear()  
-            
+            # Add processes to IO if IO already exists 
             if self.waitQueue and (not self.IOQueue or len(self.IOQueue) < self.num_ios): # are processes in waitqueue & is IO not full
                 num_to_assign =min(self.num_ios - len(self.IOQueue), len(self.waitQueue))
                 next_processes = self.waitQueue[:num_to_assign] # get # of process from wait queue needed to fill IO
@@ -563,8 +563,8 @@ class Simulator:
         qClock=str(self.clock.currentTime())
         table = Table(show_header=True) # uses the add_column information to create column headings. 
         table.add_column(f'[bold][yellow]Clock[/yellow][/bold]', width=int(terminal_width*.1))
-        table.add_column(f'[bold][cyan]Queue[/cyan][/bold]',  width=int(terminal_width*.05))
-        table.add_column(f'[bold blue]Process[/bold blue], [bold red]Priority[/bold red], [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]', width=int(terminal_width*.85))
+        table.add_column(f'[bold][cyan]Queue[/cyan][/bold]',  width=int(terminal_width*.1))
+        table.add_column(f'[bold blue]Process[/bold blue], [bold red]Priority[/bold red], [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]', width=int(terminal_width*.8))
         
         table.add_row('','New',*self.make_row("New"), end_section=True)
         table.add_row('','Ready',*self.make_row("Ready"), end_section=True)
@@ -577,7 +577,7 @@ class Simulator:
 if __name__=='__main__':
     #For loops here to run a set of FCFS then RR, then priority based
     # Simulator("data filename", num CPUs, num IO, Time Slice, Run Speed)
-    sim = Simulator("small.dat",1, 1, 3, .1)
+    sim = Simulator("small.dat",3, 1, 3, .1)
     # the stats class will need the simulation type and the loop number to tie to the output file name
     stats=Stats(sim.getProcesses(),sim.clock)
    
