@@ -103,22 +103,19 @@ class PCB:
         """
         returns the total CPU time by adding all cpu bursts
         """
-        total = 0
         for i in range(len(self.cpubursts)):
-            total+=int(self.cpubursts[i])
-        self.initCPUTime = total
-        return self.initCPUTime
+            self.initCPUTime += int(self.cpubursts[i])
+        self.cpuTime = self.initCPUTime
+        return self.cpuTime
     
     def getTotIoTime(self):
         """
         returns the total IO time by adding all io bursts
         """
-        totalIoTime = 0
         for i in range(len(self.iobursts)):
-            totalIoTime+=int(self.iobursts[i])
-        self.initIOTime = totalIoTime
-        return self.initIOTime 
-    
+            self.initIOTime += int(self.iobursts[i])
+        self.ioTime = self.initIOTime
+        return self.ioTime 
     
     def getTotalTime(self):
         """
@@ -229,38 +226,40 @@ class Stats:
         N = "\033[0m" # Reset
         #build a rich table
         # Create the table
+        rowDataStr1=''
+        rowDataStr2=''
+        rowDataStr3=''
         sClock=str(self.clock.currentTime())
-        # statTable = Table(show_header=True) # uses the add_column information to create column headings. 
-        # statTable.add_column(f'[bold][yellow]Clock[/yellow][/bold]', width=int(terminal_width*.05))
-        # statTable.add_column(f'[bold][cyan]Queue[/cyan][/bold]',  width=int(terminal_width*.05))
-        # statTable.add_column(f'[bold blue]Process[/bold blue], [bold red]Priority[/bold red], [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]', width=int(terminal_width*.9))
+        statTable = Table(show_header=True) # uses the add_column information to create column headings. 
+        statTable.add_column(f'[bold][yellow]Clock[/yellow][/bold]', width=int(terminal_width*.05))
+        statTable.add_column(f'[bold][cyan]Queue[/cyan][/bold]',  width=int(terminal_width*.05))
+        statTable.add_column(f'[bold blue]Process[/bold blue], [bold red]Priority[/bold red], [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]', width=int(terminal_width*.9))
         
-        # statTable.add_row(f'Total Processes Run Time: [bold][yellow]{sClock}[/yellow][/bold]')
-        # for pid, pcb_instances in self.processes.items():
-        #     for pcb in pcb_instances:
-        #         statTable.add_row(pcb.pid, pcb.getTotalTime(), pcb.getReadyTime(), pcb.getTotCpuTime(), 
-        #                            pcb.getTotIoTime(), pcb.getReadyTime(), pcb.cpu_ioRatio(), pcb.getcpu_util(),
-        #                              pcb.run_idleRatio())
-        # return statTable
-        
-        
-        
-        
-        titleTable = PrettyTable()
-        titleTable.field_names = ['Process Statistics Table']
-        titleTable.align['Process Statistics Table'] ='c'
-        titleTable.min_width['Process Statistics Table'] = 82
-        titleTable.add_row([f"Total System Clock Time : {sClock}"])
-        
-        statTable = PrettyTable()
-        statTable.field_names = ["PID", "Total Time", "Ready Time", "CPU Time", "Wait Time", "IO Time", "CPU Util", "CPU/IO", "Run/Idle"]
+        statTable.add_row(f'Total Processes Run Time: [bold][yellow]{sClock}[/yellow][/bold]')
         for pid, pcb_instances in self.processes.items():
             for pcb in pcb_instances:
-                statTable.add_row([pcb.pid, pcb.getTotalTime(), pcb.getReadyTime(), pcb.getTotCpuTime(), 
-                                   pcb.getTotIoTime(), pcb.getReadyTime(), pcb.cpu_ioRatio(), pcb.getcpu_util(),
-                                     pcb.run_idleRatio()])
-        print(titleTable)
+                rowDataStr1 += str(pcb.pid, pcb.getTotalTime(), pcb.getReadyTime())
+                rowDataStr2 += str(pcb.getTotCpuTime(), pcb.getWaitTime(), pcb.getTotIoTime())
+                rowDataStr3 += str(pcb.cpu_ioRatio(), pcb.getcpu_util(), pcb.run_idleRatio())
+                statTable.add_row(f'{rowDataStr1}, {rowDataStr2}, {rowDataStr3}')
+                        
         print(statTable)
+        return statTable
+        
+        # titleTable = PrettyTable()
+        # titleTable.field_names = ['Process Statistics Table']
+        # titleTable.align['Process Statistics Table'] ='c'
+        # titleTable.min_width['Process Statistics Table'] = 82
+        # titleTable.add_row([f"Total System Clock Time : {sClock}"])
+        
+        # statTable = PrettyTable()
+        # statTable.field_names = ["PID", "Total Time", "Ready Time", "CPU Time", "Wait Time", "IO Time", "CPU Util", "CPU/IO", "Run/Idle"]
+        # for pid, pcb_instances in self.processes.items():
+        #     for pcb in pcb_instances:
+        #         statTable.add_row([pcb.pid, pcb.getTotalTime(), pcb.getReadyTime(), pcb.getTotCpuTime(), pcb.getWaitTime(),
+        #                            pcb.getTotIoTime(), pcb.cpu_ioRatio(), pcb.getcpu_util(), pcb.run_idleRatio()])
+        # print(titleTable)
+        # print(statTable)
     
     def statFileWriter(self, clock, simType='none'):
         """
@@ -280,7 +279,7 @@ class Stats:
             outFileName=sim_type_to_fname.get(self.simType, 'SimStatsData.csv')
        
         with open(outFileName, 'w', newline='') as csvfile:
-            fieldnames = ["Clock Time","Process ID", "Total Time", "Ready Time", "CPU Time", "IO Time", "Wait Time","CPU/IO", "Run/Idle"]
+            fieldnames = ["Process ID", "Total Time", "Ready Time", "CPU Time", "IO Time", "Wait Time","CPU Util", "CPU/IO", "Run/Idle"]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             first_row = {"Clock Time": clock.currentTime()}
             writer.writerow(first_row)
@@ -297,6 +296,7 @@ class Stats:
                         'CPU Time': pcb.cpuTime,
                         'Wait Time' : pcb.waitTime,
                         'IO Time' : pcb.ioTime,
+                        'CPU Util':pcb.getcpu_util(),
                         'CPU/IO': pcb.cpu_ioRatio(),
                         'Run/Idle': pcb.run_idleRatio()                    
                             }
