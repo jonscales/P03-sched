@@ -7,59 +7,16 @@ import os
 from rich import print
 from rich.text import Text
 import time
-from prettytable import PrettyTable
+
 import csv
 import shutil
-# class Queue:
-#     def __init__(self,pcb):
-#         self.queue = []
+from rich.table import Table
+from rich.live import Live
+from rich.progress import SpinnerColumn
+from rich.console import Console
 
-#     def __str__(self):
-#         return ",".join(self.queue)
-
-#     def addPCB(self,pcb):
-#         self.queue.append(pcb)
-    
-#     def removePCB(self,pcb):
-#         item = self.queue[0]
-#         del self.queue[0]
-#         return item
-
-#     def decrement(self):
-#         """ Iterate over the self.queue and decrement or call whatever
-#             method for each of the pcb's in this queue
-#         """
-#         # for each process in queue
-#         #    call decrementIoBurst
-#         pass
-    
-#     def incrememnt(self,what='waittime'):
-#         """ Iterate over the self.queue and decrement or call whatever
-#             method for each of the pcb's in this queue
-#         """
-#         # for each process in queue
-#         #    call incrementwaittime
-#         if what =='waittime':
-#             pass
-#         elif what == 'runtime':
-#             pass
-#         pass 
-    
-# class CPU:
-    # def __init__(self,pcb):
-    #     self.busy = False
-    #     self.runningPCB = None
-
-    # def decrementCurrentProcess(self):
-    #     self.runningPCB.decrementCpuBurst()
-    
-    # def loadProcess(self,pcb):
-    #     self.runningPCB = pcb
-
-    # def testKickOff(self):
-    #     if self.runningPCB.getCurrentBurstTime() == 0:
-    #         pass
-    #         # kick it off the cpu
+console = Console()
+terminal_width = console.width
 
 class PCB:
     """
@@ -405,18 +362,13 @@ class Simulator:
     #     except ValueError:
     #         return float('inf') 
 
-    def simLoop(self, processes, num_cpus, num_ios): 
+    def simLoop(self, processes, num_cpus, num_ios, sleepTime): 
         """ 
         SIMULATION LOOP
         This method runs the Schedular Simulation
         """
-        # Create a table for displaying the queue contents
-        table = PrettyTable()
-        terminal_width = shutil.get_terminal_size().columns
-        table.max_width = int(.9 * terminal_width)
-    
-        table.field_names = ["Clk", "Q", "PID, Priority , Burst"]
-        table.align = 'l'
+       
+        
     
         complete = False
         loopIteration = 0
@@ -653,37 +605,74 @@ class Simulator:
                      
                 else:
                     pass
-            time.sleep(.5)
+             time.sleep(self.sleepTime)
             loopIteration += 1
-            self.clock.advanceClock(1)
             
-            
-        #    # print the processes
-            # for process_key, process_value in processes.items():
-            #     for pcb_instance in process_value: 
-            #         print(f'{process_key} status: CPU:{pcb_instance.cpubursts}; IO:{pcb_instance.iobursts}; {pcb_instance.currBurstType} : {pcb_instance.state}')
             
             clock=self.clock.currentTime()
             # Update the table contents
             os.system('cls' if os.name == 'nt' else 'clear')
-            #function call here for Stats.runningTable
-            print(f'[bold][green]Process Progress Table[/bold][/green]')
-            table.clear_rows()
-            table.align['PID'] = 'l'
-            table.add_row(["","N", [pcb.pid for pcb in self.newQueue]])
-            table.add_row(["","R", [(pcb.pid, "p:",pcb.priority, "RT:",pcb.readyTime) for pcb in self.readyQueue]])
-            table.add_row([clock,"C", [(pcb.pid, "p:", pcb.priority,"CPU:", pcb.remainingCPUTime) for pcb in self.CPUQueue]])
-            table.add_row(["","W",[(pcb.pid, "p:", pcb.priority,"WT:",pcb.waitTime) for pcb in self.waitQueue]])
-            table.add_row(["","I", [(pcb.pid,  "p:",pcb.priority, "IO:",pcb.remainingIOTime) for pcb in self.IOQueue]])
-            table.add_row(["","F", [pcb.pid for pcb in self.finishedQueue]])
+            with Live(self.generateTable(clock)) as live:
+                live.update(self.generateTable(clock))
+            self.clock.advanceClock(1)
+            #print(f'[bold][green]Process Progress Table[/bold][/green]')
             
-
-            #Print the table
-            print(table)
-            # input("press enter")
-            # continue
-
-        print(f'\n[bold][red] All processes have terminated[/red][/bold]\n')
+    # Methods for output visualization
+    def make_row(self, queue):
+        """ 
+        Called by the generateTable method to build lists containing all proceses currently within a given queue columns. 
+        Returns the jobs list to the generateTable method to be added as row in visualization table for processes. 
+        """
+        jobs =''
+        if queue=='New'and self.newQueue:
+            for pcb in self.newQueue:
+                jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red][bold]][/bold]")
+            return [jobs]
+        elif queue=='Ready' and self.readyQueue:
+            for pcb in self.readyQueue:
+                jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red], [magenta]{pcb.readyTime}[/magenta][bold]][/bold]" )    
+            return [jobs]
+        elif queue=='Wait'and self.waitQueue:
+            for self.pcb in self.waitQueue:
+                jobs += str(f"[bold][[/bold][bold blue]{self.pcb.pid}[/bold blue], [red]P{self.pcb.priority}[/red], [magenta]{self.pcb.waitTime}[/magenta][bold]][/bold]" )    
+            return [jobs]
+        elif queue=='CPU' and self.CPUQueue:
+            for pcb in self.CPUQueue:
+                jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red], [green]{pcb.remainingCPUTime}[/green][bold]][/bold]" )    
+            return [jobs]
+        elif queue=='IO' and self.IOQueue:
+            for pcb in self.IOQueue:
+                jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue], [red]P{pcb.priority}[/red], [green]{pcb.remainingIOTime}[/green][bold]][/bold]" )    
+            return [jobs]
+        elif queue=='Finished'and self.finishedQueue:
+            for pcb in self.finishedQueue:
+                jobs += str(f"[bold][[/bold][bold blue]{pcb.pid}[/bold blue][bold]][/bold]")
+            return [jobs] 
+        else:
+            return ['']
+            
+    def generateTable(self,clock) -> Table:
+        """ 
+            returns a rich table that displays all the queue contents.
+            make_row returns a list of processes in each queue. 
+        """  
+        # Create the table
+        qClock=str(self.clock.currentTime())
+        table = Table(show_header=True) # uses the add_column information to create column headings. 
+        table.add_column(f'[bold][yellow]Clock[/yellow][/bold]', width=int(terminal_width*.1))
+        table.add_column(f'[bold][cyan]Queue[/cyan][/bold]',  width=int(terminal_width*.1))
+        table.add_column(f'[bold blue]Process[/bold blue], [bold red]Priority[/bold red], [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]', width=int(terminal_width*.8))
+        
+        table.add_row('','New',*self.make_row("New"), end_section=True)
+        table.add_row('','Ready',*self.make_row("Ready"), end_section=True)
+        table.add_row(qClock,'CPU',*self.make_row("CPU"), end_section=True)
+        table.add_row('','Wait',*self.make_row("Wait"), end_section=True)
+        table.add_row('','IO',*self.make_row("IO"), end_section=True)
+        table.add_row('','Done',*self.make_row("Finished"), end_section=True)
+        return table
+        
+    
+    print(f'\n[bold][red] All processes have terminated[/red][/bold]\n')
         
 
 

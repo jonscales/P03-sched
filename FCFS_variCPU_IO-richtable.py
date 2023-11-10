@@ -7,7 +7,6 @@ import os
 from rich import print
 from rich.text import Text
 import time
-from prettytable import PrettyTable
 import csv
 import shutil
 from rich.table import Table
@@ -376,10 +375,10 @@ class Simulator:
         SIMULATION LOOP
         This method runs the Schedular Simulation
         """
-            
+
         complete = False
         loopIteration = 0
-        
+        #BEGINNING of SIMLOOP
         # loop to check each process and match clock time to arrival time.
         while not complete: #loop until all processes are in finished[]  
         
@@ -512,11 +511,9 @@ class Simulator:
             os.system('cls' if os.name == 'nt' else 'clear')
             with Live(self.generateTable(clock)) as live:
                 live.update(self.generateTable(clock))
-                # for _ in range(1):
-                #     time.sleep(0)
                     
-            
             self.clock.advanceClock(1)
+            #END of SIMLOOP
 
         print(f'\n[bold][red] All processes have terminated[/red][/bold]\n')
    
@@ -577,7 +574,7 @@ class Simulator:
 if __name__=='__main__':
     #For loops here to run a set of FCFS then RR, then priority based
     # Simulator("data filename", num CPUs, num IO, Time Slice, Run Speed)
-    sim = Simulator("small.dat",3, 1, 3, .1)
+    sim = Simulator("datafile-20.dat",3, 3, 3, .1)
     # the stats class will need the simulation type and the loop number to tie to the output file name
     stats=Stats(sim.getProcesses(),sim.clock)
    
