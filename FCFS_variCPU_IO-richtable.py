@@ -225,24 +225,22 @@ class Stats:
         U = '\033[4m' # underline
         N = "\033[0m" # Reset
         #build a rich table
-        # Create the table
-        rowDataStr1=''
-        rowDataStr2=''
-        rowDataStr3=''
+        # Create the table        
         sClock=str(self.clock.currentTime())
-        statTable = Table(show_header=True) # uses the add_column information to create column headings. 
-        statTable.add_column(f'[bold][yellow]Clock[/yellow][/bold]', width=int(terminal_width*.05))
-        statTable.add_column(f'[bold][cyan]Queue[/cyan][/bold]',  width=int(terminal_width*.05))
-        statTable.add_column(f'[bold blue]Process[/bold blue], [bold red]Priority[/bold red], [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]', width=int(terminal_width*.9))
+        statTable = Table(show_header=False) # uses the add_column information to create column headings. 
+        #statTable.add_column(f'[bold][yellow]Clock[/yellow][/bold]', width=int(terminal_width*.1))
+        statTable.add_column(f'[bold][cyan]Queue[/cyan][/bold]',  width=int(terminal_width*.1))
+        statTable.add_column(f'[bold blue]Process[/bold blue], [bold red]Total Time[/bold red], [bold magenta]Ready Time[/bold magenta], [bold green]CPU Time[/bold green], [bold magenta]Wait Time[/bold magenta],[bold green]IO Time[/bold green],[bold red]CPU Util[/bold red],[bold blue]CPU/IO[/bold blue], [bold green]Run/Idle[/bold green]', width=int(terminal_width*.8))
+                             
         
         statTable.add_row(f'Total Processes Run Time: [bold][yellow]{sClock}[/yellow][/bold]')
         for pid, pcb_instances in self.processes.items():
             for pcb in pcb_instances:
-                rowDataStr1 += str(pcb.pid, pcb.getTotalTime(), pcb.getReadyTime())
-                rowDataStr2 += str(pcb.getTotCpuTime(), pcb.getWaitTime(), pcb.getTotIoTime())
-                rowDataStr3 += str(pcb.cpu_ioRatio(), pcb.getcpu_util(), pcb.run_idleRatio())
-                statTable.add_row(f'{rowDataStr1}, {rowDataStr2}, {rowDataStr3}')
-                        
+                rowData =''
+                rowData += (f'{pcb.pid}, {pcb.getTotalTime()}, {pcb.getReadyTime()}, {pcb.getTotCpuTime()}, {pcb.getWaitTime()}, {pcb.getTotIoTime()}, {pcb.cpu_ioRatio()}, {pcb.getcpu_util()}, {pcb.run_idleRatio()}')
+                statTable.add_row(f'{rowData}')
+                
+
         print(statTable)
         return statTable
         
@@ -279,7 +277,7 @@ class Stats:
             outFileName=sim_type_to_fname.get(self.simType, 'SimStatsData.csv')
        
         with open(outFileName, 'w', newline='') as csvfile:
-            fieldnames = ["Process ID", "Total Time", "Ready Time", "CPU Time", "IO Time", "Wait Time","CPU Util", "CPU/IO", "Run/Idle"]
+            fieldnames = ["Clock Time","Process ID", "Total Time", "Ready Time", "CPU Time", "IO Time", "Wait Time","CPU Util", "CPU/IO", "Run/Idle"]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             first_row = {"Clock Time": clock.currentTime()}
             writer.writerow(first_row)
@@ -564,9 +562,9 @@ class Simulator:
         # Create the table
         qClock=str(self.clock.currentTime())
         table = Table(show_header=True) # uses the add_column information to create column headings. 
-        table.add_column(f'[bold][yellow]Clock[/yellow][/bold]', width=int(terminal_width*.05))
+        table.add_column(f'[bold][yellow]Clock[/yellow][/bold]', width=int(terminal_width*.1))
         table.add_column(f'[bold][cyan]Queue[/cyan][/bold]',  width=int(terminal_width*.05))
-        table.add_column(f'[bold blue]Process[/bold blue], [bold red]Priority[/bold red], [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]', width=int(terminal_width*.9))
+        table.add_column(f'[bold blue]Process[/bold blue], [bold red]Priority[/bold red], [bold green]Burst Time[/bold green]/[bold magenta]Idle Time[/bold magenta]', width=int(terminal_width*.85))
         
         table.add_row('','New',*self.make_row("New"), end_section=True)
         table.add_row('','Ready',*self.make_row("Ready"), end_section=True)
